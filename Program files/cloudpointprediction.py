@@ -3,9 +3,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "..",))
 import pickle
 from tkinter import filedialog, Tk
 import polyfingerprints as pfp
