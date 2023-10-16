@@ -2,6 +2,7 @@ from typing import Tuple, List, Optional, Dict, Union
 from rdkit import Chem
 from rdkit.Chem import Descriptors, Mol, MolFromSmiles
 import numpy as np
+from rdkit import RDLogger
 
 
 def molar_wt_fromSmiles(smiles: str) -> float:
@@ -90,4 +91,7 @@ def repeating_unit_combinations(
 
 
 def polymol_fom_smiles(smiles: str) -> Mol:
-    return MolFromSmiles(smiles)
+    RDLogger.DisableLog("rdApp.warning")
+    mol = MolFromSmiles(smiles)
+    RDLogger.EnableLog("rdApp.warning")
+    return mol
