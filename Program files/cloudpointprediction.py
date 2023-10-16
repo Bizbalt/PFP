@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "..",))
 import pickle
 from tkinter import filedialog, Tk
 import polyfingerprints as pfp
@@ -232,19 +234,23 @@ def initialize_training():
         print("No file found!")
 
     def create_pfp_dataset():
+        end_groups = df["SMILES_start_group"], df["SMILES_end_group"]
+        structure_tuple = ({A1: A2, B1: B2, C1: C2, D1: D2, E1: E2} for A1, A2, B1, B2, C1, C2, D1, D2, E1, E2 in
+                           zip(df["SMILES_repeating_unitA"], df["molpercent_repeating_unitA"],
+                               df["SMILES_repeating_unitB"],
+                               df["molpercent_repeating_unitB"], df["SMILES_repeating_unitC"],
+                               df["molpercent_repeating_unitC"], df["SMILES_repeating_unitD"],
+                               df["molpercent_repeating_unitD"], df["SMILES_repeating_unitE"],
+                               df["molpercent_repeating_unitE"]))  # arbitrarily many repeating units
+        molar_weights = df["Mn"]
+
         print("creating Polymer-Fingerprints from Dataframe...")
         fingerprints = [pfp.create_pfp(
             end_units={"start": start, "end": end},
-            repeating_units={k: {molpA: repA, molpB: repB, molpC: repC, molpD: repD, molpE: repE}[k] for k in
-                             {molpA: repA, molpB: repB, molpC: repC, molpD: repD, molpE: repE} if not isnan(k)},
-            mol_weight=weight, fp_size=FP_SIZE, fp_type=pfp_const_type
-
-        ) for start, end, repA, molpA, repB, molpB, repC, molpC, repD, molpD, repE, molpE, weight in
-            zip(df["SMILES_start_group"], df["SMILES_end_group"], df["SMILES_repeating_unitA"],
-                df["molpercent_repeating_unitA"], df["SMILES_repeating_unitB"], df["molpercent_repeating_unitB"],
-                df["SMILES_repeating_unitC"], df["molpercent_repeating_unitC"], df["SMILES_repeating_unitD"],
-                df["molpercent_repeating_unitD"], df["SMILES_repeating_unitE"], df["molpercent_repeating_unitE"],
-                df["Mn"])]
+            repeating_units={smiles: ratio for smiles, ratio in smiles_tuple.items() if not isnan(ratio)},
+            mol_weight=weight, fp_size=FP_SIZE, fp_type=pfp_const_type)
+            for start, end, smiles_tuple, weight in
+            zip(*end_groups, structure_tuple, molar_weights)]
 
         print("reducing Fingerprint-set...")
         reduced_fp, reduced_fp_mask, reduced_fp_mask2 = pfp.reduce_fp_set(*fingerprints)
@@ -555,6 +561,6 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
 
 
 if __name__ == "__main__":
-    # initialize_training()
-    use_model("single_sets")
+    initialize_training()
+    #use_model("single_sets")
 
