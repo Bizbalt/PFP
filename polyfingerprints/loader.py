@@ -1,16 +1,22 @@
 from __future__ import annotations
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 import pandas as pd
 import numpy as np
 
-from ._types import PfpData
+from ._types import PfpData, FingerprintFunction
+from .core import create_pfp
 
 
 def csv_loader(
     csv: str,
     repeating_unit_columns: List[Tuple[str, str]],
     mw_column: str,
+    start_group_column: Optional[str] = None,
+    end_group_column: Optional[str] = None,
     y: Optional[str] = None,
+    intersection_fp_size: int | None = 2048,
+    enhanced_sum_fp_size: int | None = 2048,
+    enhanced_fp_functions: List[FingerprintFunction] | None = None,
     **kwargs,
 ):
     """Loads the data to create a Polyfingerprint from a csv file.
@@ -35,6 +41,10 @@ def csv_loader(
 
     if y:
         colstofind.append(y)
+    if start_group_column:
+        colstofind.append(start_group_column)
+    if end_group_column:
+        colstofind.append(end_group_column)
 
     # check if all columns are in df
     for col in colstofind:
@@ -48,7 +58,7 @@ def csv_loader(
 
     alldata: List[PfpData] = []
     for _, rowdata in df.iterrows():
-        repeatingunits: dict[str, float] = {}
+        repeatingunits: Dict[str, float] = {}
         for smiles, amount in repeating_unit_columns:
             # skip if no smiles or amount are None or NaN
             if not rowdata[smiles] or not rowdata[amount] or np.isnan(rowdata[amount]):
@@ -72,8 +82,30 @@ def csv_loader(
             dy = rowdata[y]
             if np.isnan(dy):
                 dy = None
+        start_group = None
+        if start_group_column:
+            start_group = rowdata[start_group_column]
+        end_group = None
+        if end_group_column:
+            end_group = rowdata[end_group_column]
 
-        pfpdat = PfpData(repeating_units=repeatingunits, y=dy, mw=rowdata[mw_column])
+        pfpdat = PfpData(
+            repeating_units=repeatingunits,
+            y=dy,
+            mw=rowdata[mw_column],
+            startgroup=start_group,
+            endgroup=end_group,
+        )
         alldata.append(pfpdat)
 
+    for d in alldata:
+        d["pfp"] = create_pfp(
+            repeating_units=d["repeating_units"],
+            mol_weight=d["mw"],
+            start=d["startgroup"],
+            end=d["endgroup"],
+            intersection_fp_size=intersection_fp_size,
+            enhanced_sum_fp_size=enhanced_sum_fp_size,
+            enhanced_fp_functions=enhanced_fp_functions,
+        )
     return alldata

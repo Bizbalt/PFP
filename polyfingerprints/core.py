@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable
+from typing import Optional, List
 import numpy as np
 from .fingerprints import (
     create_RDKFingerprint,
@@ -6,22 +6,23 @@ from .fingerprints import (
     weight_sum_fingerprints,
 )
 from ._types import FingerprintFunction
-from .utils import repeating_unit_combinations, calc_polymer_shares
+from rdkit.Chem import Mol
+from .utils import repeating_unit_combinations, calc_polymer_shares, polymol_fom_smiles
 
 
 def create_pfp(
-    repeating_units: dict[str:float],
+    repeating_units: dict[str, float],
     mol_weight: float,
     start: Optional[str] = None,
     end: Optional[str] = None,
     intersection_fp_size: Optional[int] = 2048,
     enhanced_sum_fp_size: Optional[int] = 2048,
     enhanced_fp_functions: Optional[List[FingerprintFunction]] = None,
-):
+) -> np.ndarray:
     """Creates a Polyfingerprint
 
     Args:
-        repeating_units (dict[str: float]): Dictionary containing the
+        repeating_units (Dict[str: float]): Dictionary containing the
             SMILES representation of each repeating unit and the
             corresponding relative amount.
         mol_weight (float): Molecular weight of the polymer.

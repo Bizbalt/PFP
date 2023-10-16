@@ -1,27 +1,30 @@
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Dict, Union
 from rdkit import Chem
-from rdkit.Chem import Descriptors
+from rdkit.Chem import Descriptors, Mol, MolFromSmiles
 import numpy as np
 
 
-def molar_wt_fromSmiles(smiles: str):
-    return Descriptors.MolWt(Chem.MolFromSmiles(smiles))
+def molar_wt_fromSmiles(smiles: str) -> float:
+    return Descriptors.MolWt(polymol_fom_smiles(smiles))
 
 
 def calc_polymer_shares(
-    rep_units: dict[str:float], start_end_smiles: list[str], total_weight: float
-) -> Tuple[dict[str:float], list[float]]:
+    rep_units: dict[str, float],
+    start_end_smiles: List[str],
+    total_weight: float,
+) -> Tuple[Dict[str, float], List[float]]:
     """calculates the mole fraction of the polymer repeating units and the start end groups
 
     Args:
-        rep_units (dict[str:float]): Dictionary containing the SMILES representation of each repeating unit and the
+        rep_units (Dict[str:float]): Dictionary containing the SMILES representation of each repeating unit and the
             corresponding relative amount.
-        ends (list[str]): list of SMILES strings for the start and end groups
+        ends (List[str]): list of SMILES strings for the start and end groups
 
     Returns:
-        Tuple[dict[str:float], list[float]]: Tuple containing the mole fraction of the repeating units and the start end groups
+        Tuple[Dict[str:float], List[float]]: Tuple containing the mole fraction of the repeating units and the start end groups
 
     """
+
     total_weight_minus = total_weight - sum(
         molar_wt_fromSmiles(x) for x in start_end_smiles
     )
@@ -54,7 +57,7 @@ def repeating_unit_combinations(
     """create all possible combinations of repeating units
 
     Args:
-        frag_smiles (list[str]): list of smiles strings for each repeating unit
+        frag_smiles (List[str]): list of smiles strings for each repeating unit
         start (Optional[str], optional): start of the polymer. Defaults to None.
         end (Optional[str], optional): end of the polymer. Defaults to None.
 
@@ -84,3 +87,7 @@ def repeating_unit_combinations(
     if end:
         recombinations_smiles = [s + end for s in recombinations_smiles]
     return recombinations_smiles
+
+
+def polymol_fom_smiles(smiles: str) -> Mol:
+    return MolFromSmiles(smiles)

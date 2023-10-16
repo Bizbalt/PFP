@@ -5,19 +5,19 @@ from ._types import FingerprintFunction
 
 
 def create_RDKFingerprint(
-    smiles_s: list[str], fp_size: int = 2048, complement: bool = False
-) -> list[np.ndarray]:
+    smiles_s: List[str], fp_size: int = 2048, complement: bool = False
+) -> List[np.ndarray]:
     """
     Creates a list of RDKFingerprints from a list of SMILES strings.
 
     Args:
-        smiles_s (list[str]): List of SMILES strings.
+        smiles_s (List[str]): List of SMILES strings.
         fp_size (int, optional): Size of the fingerprint. Defaults to 2048.
         complement (bool, optional): If True, the SMILES strings are patched
             with [H][H] at the beginning and end, should be true if working
             with repeating unit smiles to hide the radicals. Defaults to False.
     Returns:
-        list[np.array]: List of RDKFingerprints.
+        List[np.array]: List of RDKFingerprints.
     """
     if complement:
         smiles_list = [("[H]{}[H]".format(smiles)) for smiles in smiles_s]
@@ -59,13 +59,13 @@ def merge_bit_fingerprints(
 
 
 def weight_sum_fingerprints(
-    fingerprints: list[np.ndarray[[-1], float]], weights: list[float]
+    fingerprints: List[np.ndarray[[-1], float]], weights: List[float]
 ) -> np.ndarray[[-1], float]:
     """sums up a list of fingerprints with weights and returns the weighted sum fingerprint
 
     Args:
-        fingerprints (list[np.ndarray[[-1], float]]): list of fingerprints
-        weights (list[float]): list of weights
+        fingerprints (List[np.ndarray[[-1], float]]): list of fingerprints
+        weights (List[float]): list of weights
 
     Returns:
         np.ndarray[[-1], float]: weighted sum fingerprint
