@@ -32,7 +32,7 @@ EARLY_STOPPING_PATIENCE, MIN_DELTA = 20, 0.1  # early stopping settings
 last_loss = 0
 
 USE_FP = "pfp"  # choose map4_fp or morgan4_fp from csv with additional already created FPs or leave blank or pfp
-pfp_const_type = "Subs+AP"  # constitution type for pfp - either Subs+AP or morgan4 for the enhanced part
+pfp_const_type = None  # constitution type for pfp - either Subs+AP or morgan4 for the enhanced part
 model_nr = "N" + "_" + USE_FP  # name the model will be saved under
 
 sns.set_theme(style="white", palette=None)
@@ -243,9 +243,10 @@ def initialize_training():
 
         print("creating Polymer-Fingerprints from Dataframe...")
         fingerprints = [pfp.create_pfp(
-            end_units={"start": start, "end": end},
+            start=start, end=end,
             repeating_units={smiles: ratio for smiles, ratio in smiles_tuple.items() if not isnan(ratio)},
-            mol_weight=weight, fp_size=FP_SIZE, fp_type=pfp_const_type)
+            mol_weight=weight, intersection_fp_size=FP_SIZE, enhanced_sum_fp_size=FP_SIZE,
+            enhanced_fp_functions=pfp_const_type)
             for start, end, smiles_tuple, weight in
             zip(*end_groups, structure_tuple, molar_weights)]
 
