@@ -1,7 +1,9 @@
-from typing import Callable, List
+from typing import Callable, List, Tuple
 import numpy as np
 from rdkit import Chem
 from ._types import FingerprintFunction
+from .utils import polymol_fom_smiles
+from .logger import PFPLOGGER
 
 
 def create_RDKFingerprint(
@@ -25,7 +27,7 @@ def create_RDKFingerprint(
         smiles_list = smiles_s
 
     fingerprint_s = [
-        np.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smiles), fpSize=fp_size))
+        np.array(Chem.RDKFingerprint(polymol_fom_smiles(smiles), fpSize=fp_size))
         for smiles in smiles_list
     ]
     return fingerprint_s
@@ -97,3 +99,63 @@ def weight_sum_fingerprints(
     fingerprints = [fp * weights[i] for i, fp in enumerate(fingerprints)]
 
     return np.sum(fingerprints, axis=0)
+
+
+def reduce_fp_set(
+    fingerprints: List[np.ndarray[[-1], float]]
+) -> Tuple[
+    List[np.ndarray[[-1], float]], np.ndarray[[-1], bool], np.ndarray[[-1], float]
+]:
+    """
+    Reduces a set of fingerprints by removing positions that have identical values across all provided fingerprints.
+
+    Given multiple fingerprints, this function identifies and discards the positions (features)
+    that are consistent among all the fingerprints. Such consistent positions might be deemed as less informative
+    for certain analyses since they don't contribute to the distinction between fingerprints.
+
+    Args:
+        fingerprints (List[np.ndarray]): A list of 1D numpy arrays representing the fingerprints.
+
+    Returns:
+        Tuple[List[np.ndarray], np.ndarray, np.ndarray]:
+            - List[np.ndarray]: A list of reduced 1D numpy arrays where identical positions across all fingerprints have been removed.
+            - np.ndarray: A boolean mask indicating the positions that were kept (False) or removed (True).
+            - np.ndarray: The first fingerprint from the input, prior to any reductions.
+
+    Note:
+        This function assumes that all input fingerprints are of the same length. It also logs the percentage
+        reduction in fingerprint size, which might be useful for understanding the impact of the reduction on the data.
+
+    Examples:
+        >>> fp1 = np.array([0.2, 0.5, 0.1])
+        >>> fp2 = np.array([0.2, 0.6, 0.1])
+        >>> fp3 = np.array([0.2, 0.7, 0.1])
+        >>> reduced_fps, mask, reference_fp = reduce_fp_set(fp1, fp2, fp3)
+        >>> print(reduced_fps)  # Lists of reduced fingerprints
+        np.array([[0.5], [0.6], [0.7]])
+        >>> print(mask)         # Mask used for reduction
+        np.array([True, False, True])
+        >>> print(reference_fp) # Reference fingerprint
+        np.array([0.2, 0.5, 0.1])
+    """
+
+    # Stack the fingerprints to identify common positions
+    stacked_fps = np.stack(fingerprints)
+
+    # Identify positions that are the same across all fingerprints
+    same_positions = np.all(stacked_fps == stacked_fps[0, :], axis=0)
+
+    # Create a mask to keep positions that are not the same
+    mask = same_positions
+
+    # Reduce the fingerprints using the mask
+    reduced_fps = [fp[~mask] for fp in fingerprints]
+
+    PFPLOGGER.info(
+        "reduced size by {0:.0f}%".format(
+            (1 - (len(reduced_fps[0]) / len(fingerprints[0]))) * 100
+        )
+    )
+
+    # Return the reduced fingerprints, the mask, and a reference fingerprint
+    return reduced_fps, mask, fingerprints[0]

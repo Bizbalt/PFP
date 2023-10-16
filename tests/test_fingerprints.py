@@ -50,5 +50,28 @@ class TestFingerprintFunctions(unittest.TestCase):
             )
 
 
+class TestReduceFPSet(unittest.TestCase):
+    def test_reduce_fp_set(self):
+        from polyfingerprints.fingerprints import reduce_fp_set
+
+        # Sample fingerprints for testing
+        fp1 = np.array([0.2, 0.5, 0.1])
+        fp2 = np.array([0.2, 0.6, 0.1])
+        fp3 = np.array([0.2, 0.7, 0.1])
+
+        reduced_fps, mask, reference_fp = reduce_fp_set([fp1, fp2, fp3])
+
+        # Check that the reduced fingerprints have the expected values
+        np.testing.assert_array_equal(
+            reduced_fps, [np.array([0.5]), np.array([0.6]), np.array([0.7])]
+        )
+
+        # Check that the mask is correct
+        np.testing.assert_array_equal(mask, np.array([True, False, True]))
+
+        # Check that the reference fingerprint is correct
+        np.testing.assert_array_equal(reference_fp, fp1)
+
+
 if __name__ == "__main__":
     unittest.main()
