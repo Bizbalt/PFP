@@ -1,0 +1,17 @@
+channels:
+  - nvidia
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - pip
+  - jupyterlab
+  - rdkit
+  - numpy
+  - pytorch
+  - pytorch-cuda=11.8
+  - black
+  - flake8
+  - pip:
+      - pytest

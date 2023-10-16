@@ -1,0 +1,103 @@
+import unittest
+from rdkit import Chem
+from rdkit.Chem import Descriptors
+
+
+class TestmolarWtfromSmiles(unittest.TestCase):
+    def test_molar_wt_fromSmiles_1(self):
+        from polyfingerprints.utils import molar_wt_fromSmiles
+
+        smiles_1 = "C"  # Methane
+        smiles_2 = "CC"  # Water
+        mol = Chem.MolFromSmiles(smiles_1)
+        expected_mol_weight = Descriptors.MolWt(mol)
+        calculated_mol_weight = molar_wt_fromSmiles(smiles_1)
+        self.assertAlmostEqual(expected_mol_weight, calculated_mol_weight, places=5)
+
+        mol = Chem.MolFromSmiles(smiles_2)
+        expected_mol_weight = Descriptors.MolWt(mol)
+        calculated_mol_weight = molar_wt_fromSmiles(smiles_2)
+        self.assertAlmostEqual(expected_mol_weight, calculated_mol_weight, places=5)
+
+    def test_molar_wt_fromSmiles_invalid_smiles(self):
+        from polyfingerprints.utils import molar_wt_fromSmiles
+
+        # This is to test if the function behaves well with an invalid smiles string
+        invalid_smiles = "invalid_smiles"
+        with self.assertRaises(Exception):
+            molar_wt_fromSmiles(invalid_smiles)
+
+
+class TestCalcPolymerShares(unittest.TestCase):
+    def setUp(self):
+        # Sample repeating units and end groups
+        self.rep_units = {"C": 0.6, "O": 0.4}
+        self.ends = ["F", "Cl"]
+        self.total_weight = 100
+
+    def test_happy_path(self):
+        from polyfingerprints.utils import calc_polymer_shares
+
+        ru_mole_fractions, ends_mole_fraction = calc_polymer_shares(
+            self.rep_units, self.ends, self.total_weight
+        )
+
+        self.assertTrue(sum(ru_mole_fractions.values()) + sum(ends_mole_fraction) == 1)
+
+    def test_total_weight_less_than_ends(self):
+        from polyfingerprints.utils import calc_polymer_shares
+
+        with self.assertRaises(ValueError):
+            calc_polymer_shares(self.rep_units, ["F", "CCCCC"], 50)
+
+    def test_normalize_rep_units(self):
+        from polyfingerprints.utils import calc_polymer_shares
+
+        rep_units = {"C": 60, "O": 40}
+        ru_mole_fractions, _ = calc_polymer_shares(
+            rep_units, self.ends, self.total_weight
+        )
+        self.assertTrue(sum(ru_mole_fractions.values()) <= 1)
+
+    def test_resulting_mole_fractions_sum_to_1(self):
+        from polyfingerprints.utils import calc_polymer_shares
+
+        ru_mole_fractions, ends_mole_fraction = calc_polymer_shares(
+            self.rep_units, self.ends, self.total_weight
+        )
+
+        self.assertAlmostEqual(
+            sum(ru_mole_fractions.values()) + sum(ends_mole_fraction), 1, places=5
+        )
+
+
+class TestRepeatingUnitCombinations(unittest.TestCase):
+    def test_combinations(self):
+        from polyfingerprints.utils import repeating_unit_combinations
+
+        repeating_units = ["[CH2]C[CH2]", "[CH2][CH](-C)"]
+        start_unit = "[H]"
+        end_unit = "[CH3]"
+        expected_combinations = [
+            "[H][CH2]C[CH2][CH2]C[CH2][CH3]",
+            "[H][CH2]C[CH2][CH2][CH](-C)[CH3]",
+            "[H][CH2][CH](-C)[CH2]C[CH2][CH3]",
+            "[H][CH2][CH](-C)[CH2][CH](-C)[CH3]",
+        ]
+
+        result = repeating_unit_combinations(
+            repeating_units, start=start_unit, end=end_unit
+        )
+        self.assertListEqual(result, expected_combinations)
+
+    def test_combinations_length(self):
+        from polyfingerprints.utils import repeating_unit_combinations
+
+        for i in range(1, 5):
+            units = [f"U{j+1}" for j in range(i)]
+            combinations = repeating_unit_combinations(units)
+            self.assertEqual(len(combinations), i**i)
+
+
+if __name__ == "__main__":
+    unittest.main()
