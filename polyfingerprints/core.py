@@ -1,11 +1,12 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple
 import numpy as np
 from .fingerprints import (
     create_RDKFingerprint,
     merge_bit_fingerprints,
     weight_sum_fingerprints,
+    reduce_fp_set,
 )
-from ._types import FingerprintFunction
+from ._types import FingerprintFunction, PfpData
 from .utils import repeating_unit_combinations, calc_polymer_shares, polymol_fom_smiles
 
 
@@ -90,3 +91,19 @@ def create_pfp(
     )
 
     return np.concatenate([intersection_fp, enhanced_sum_fp])
+
+
+def reduce_pfp_in_dataset(pfp_data: List[PfpData]) -> Tuple[List[PfpData], dict]:
+    for d in pfp_data:
+        if "pfp" not in d or d["pfp"] is None:
+            raise ValueError("Missing Polyfingerprint in dataset.")
+
+    fingerprints: List[np.ndarray] = [d["pfp"] for d in pfp_data]
+    reduced_fps, mask, reference_fp = reduce_fp_set(fingerprints)
+    for d, rfp in zip(pfp_data, reduced_fps):
+        d["pfp"] = rfp
+
+    return pfp_data, {
+        "mask": mask,
+        "reference_fp": reference_fp,
+    }

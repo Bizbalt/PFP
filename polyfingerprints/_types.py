@@ -16,6 +16,7 @@ class PfpData(TypedDict):
     endgroup: Optional[str]
     y: Optional[Union[float, int]]
     mw: float
+    pfp: Optional[np.ndarray]
 
 
 FingerprintFunction = Callable[[List[str], int, bool], List[np.ndarray]]

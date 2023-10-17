@@ -158,4 +158,4 @@ def reduce_fp_set(  # ToDo: move to utils.py? and add the second function to red
     )
 
     # Return the reduced fingerprints, the mask, and a reference fingerprint
-    return reduced_fps, mask, fingerprints[0]
+    return reduced_fps, mask, fingerprints[0].copy()
