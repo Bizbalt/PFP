@@ -7,7 +7,7 @@ from .fingerprints import (
     reduce_fp_set,
 )
 from ._types import FingerprintFunction, PfpData
-from .utils import repeating_unit_combinations, calc_polymer_shares, polymol_fom_smiles
+from .utils import repeating_unit_combinations, calc_polymer_shares
 
 
 def create_pfp(
@@ -37,7 +37,8 @@ def create_pfp(
             Defaults to [create_RDKFingerprint].
 
     Returns:
-        np.ndarray[[-1], float]: Polyfingerprint with length intersection_fp_size + (2 * enhanced_sum_fp_size)*len(enhanced_fp_functions)
+        np.ndarray[[-1], float]:
+            Polyfingerprint with length intersection_fp_size + (2 * enhanced_sum_fp_size)*len(enhanced_fp_functions)
 
     """
 

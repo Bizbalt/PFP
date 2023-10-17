@@ -1,7 +1,6 @@
-from typing import Callable, List, Tuple
+from typing import List, Tuple
 import numpy as np
 from rdkit import Chem
-from ._types import FingerprintFunction
 from .utils import polymol_fom_smiles
 from .logger import PFPLOGGER
 
