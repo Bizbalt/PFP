@@ -2,9 +2,12 @@ from __future__ import annotations
 from typing import List, Tuple, Optional, Dict
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 from ._types import PfpData, FingerprintFunction
 from .core import create_pfp
+from .utils import test_polymer_smiles
+from .logger import PFPLOGGER
 
 
 def csv_loader(
@@ -57,7 +60,7 @@ def csv_loader(
             print(f"Warning: Column '{col}' not used.")
 
     alldata: List[PfpData] = []
-    for _, rowdata in df.iterrows():
+    for _, rowdata in tqdm(df.iterrows(), total=len(df), desc="Loading data"):
         repeatingunits: Dict[str, float] = {}
         for smiles, amount in repeating_unit_columns:
             # skip if no smiles or amount are None or NaN
@@ -70,6 +73,15 @@ def csv_loader(
 
         # skip if no repeating units were found
         if not repeatingunits:
+            continue
+
+        # check repeating units
+        invalid_ru = False
+        for ru in repeatingunits.keys():
+            if not test_polymer_smiles(ru):
+                PFPLOGGER.warning(f"Invalid SMILES string for repeating unit: {ru}")
+                invalid_ru = True
+        if invalid_ru:
             continue
 
         # normalize amounts
@@ -98,7 +110,7 @@ def csv_loader(
         )
         alldata.append(pfpdat)
 
-    for d in alldata:
+    for d in tqdm(alldata, total=len(alldata), desc="Creating Polyfingerprints"):
         d["pfp"] = create_pfp(
             repeating_units=d["repeating_units"],
             mol_weight=d["mw"],
