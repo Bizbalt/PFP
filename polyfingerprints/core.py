@@ -6,7 +6,6 @@ from .fingerprints import (
     weight_sum_fingerprints,
 )
 from ._types import FingerprintFunction
-from rdkit.Chem import Mol
 from .utils import repeating_unit_combinations, calc_polymer_shares, polymol_fom_smiles
 
 
@@ -49,7 +48,7 @@ def create_pfp(
     if not enhanced_fp_functions:
         enhanced_fp_functions: List[FingerprintFunction] = [create_RDKFingerprint]
 
-    # craete intersection fingerprint
+    # create intersection fingerprint
     # create all possible combinations of repeating units
     fragment_recomb = repeating_unit_combinations(
         list(repeating_units.keys()), start=start, end=end

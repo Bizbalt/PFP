@@ -101,7 +101,7 @@ def weight_sum_fingerprints(
     return np.sum(fingerprints, axis=0)
 
 
-def reduce_fp_set(
+def reduce_fp_set(  # ToDo: move to utils.py? and add the second function to reduce forthcoming fingerprints likewise.
     fingerprints: List[np.ndarray[[-1], float]]
 ) -> Tuple[
     List[np.ndarray[[-1], float]], np.ndarray[[-1], bool], np.ndarray[[-1], float]

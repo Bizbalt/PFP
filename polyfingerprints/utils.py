@@ -34,7 +34,7 @@ def calc_polymer_shares(
             "Total weight of the polymer is smaller than the weight of the start and end groups."
         )
 
-    # normalize rep_units, normaly this should be done in a previous step, but just in case
+    # normalize rep_units, normally this should be done in a previous step, but just in case
     total_amount = sum([ru for ru in rep_units.values()])
     rep_units = {k: v / total_amount for k, v in rep_units.items()}
 
