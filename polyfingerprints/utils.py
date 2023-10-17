@@ -95,3 +95,43 @@ def polymol_fom_smiles(smiles: str) -> Mol:
     mol = MolFromSmiles(smiles)
     RDLogger.EnableLog("rdApp.warning")
     return mol
+
+
+def test_polymer_smiles(smiles: str) -> bool:
+    """Test if a smiles string is a valid monomer representation.
+    For this the first and last atom of the molecule must have a a missing bond (radical) like [CH2][CH2](C(=O)(OC))
+
+    Args:
+        smiles (str): smiles string of the monomer
+
+    Returns:
+        bool: True if the smiles string is a valid monomer representation
+
+    Example:
+        >>> test_polymer_smiles("CCC(=O)OC") # has no open ends
+        False
+        >>> test_polymer_smiles("[CH2][CH]C(=O)OC") # has both open ends, but not at the terminal atoms
+        False
+        >>> test_polymer_smiles("[CH2][CH](C(=O)(OC))") # has both open ends at the terminal atoms
+        True
+    """
+
+    try:
+        basemol = polymol_fom_smiles(smiles)
+        # minimum two radicals
+        ori_n_radicals = Descriptors.NumRadicalElectrons(basemol)
+        if not ori_n_radicals >= 2:
+            return False
+        if not basemol:
+            return False
+        if not polymol_fom_smiles(smiles * 3):
+            return False
+
+        hmol = polymol_fom_smiles("[H]" + smiles + "[H]")
+        if not hmol:
+            return False
+        if not Descriptors.NumRadicalElectrons(hmol) == ori_n_radicals - 2:
+            return False
+        return True
+    except Exception:
+        return False

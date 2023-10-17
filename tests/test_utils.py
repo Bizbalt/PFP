@@ -99,5 +99,33 @@ class TestRepeatingUnitCombinations(unittest.TestCase):
             self.assertEqual(len(combinations), i**i)
 
 
+class TestTestPolymerSmiles(unittest.TestCase):
+    def test_valid_polymer_smiles(self):
+        from polyfingerprints.utils import test_polymer_smiles
+
+        # Provided examples
+        self.assertFalse(test_polymer_smiles("CCC(=O)OC"))  # has no open ends
+        self.assertFalse(
+            test_polymer_smiles("[CH2][CH]C(=O)OC")
+        )  # has both open ends, but not at the terminal atoms
+        self.assertTrue(
+            test_polymer_smiles("[CH2][CH](C(=O)(OC))")
+        )  # has both open ends at the terminal atoms
+
+        # Additional test cases
+        self.assertFalse(test_polymer_smiles(""))  # empty string
+        self.assertTrue(
+            test_polymer_smiles("[CH2][CH](C(=O)(OC(C)(C)OCC))")
+        )  # a more complex structure with open ends
+
+        # Test cases that can potentially raise exceptions
+        self.assertFalse(
+            test_polymer_smiles("[CH2][CH]C(=O)(OC")
+        )  # unbalanced parentheses
+        self.assertFalse(
+            test_polymer_smiles("invalidSmiles")
+        )  # not a valid SMILES string
+
+
 if __name__ == "__main__":
     unittest.main()
