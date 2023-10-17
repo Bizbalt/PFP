@@ -126,6 +126,54 @@ class TestTestPolymerSmiles(unittest.TestCase):
             test_polymer_smiles("invalidSmiles")
         )  # not a valid SMILES string
 
+    def test_valid_startgroup(self):
+        from polyfingerprints.utils import test_startgroup
+
+        # Provided examples
+        self.assertFalse(test_startgroup("CCC"))  # has no open ends
+        self.assertFalse(
+            test_startgroup("C[CH]C")
+        )  # has a radical but not at the terminal atom
+        self.assertTrue(
+            test_startgroup("C[CH](C)")
+        )  # has a radical at the terminal atom
+
+        # Additional test cases
+        self.assertFalse(test_startgroup(""))  # empty string
+        self.assertFalse(
+            test_startgroup("[CH2]CC")
+        )  # radical at the start of the molecule
+        self.assertTrue(
+            test_startgroup("[CH2][CH2]")
+        )  # radicals at the end start is optional
+        self.assertTrue(test_startgroup("CC[CH2]"))  # radical at the end
+
+        # Test cases that can potentially raise exceptions
+        self.assertFalse(test_startgroup("C[CH2]C("))  # unbalanced parentheses
+        self.assertFalse(test_startgroup("invalidSmiles"))  # not a valid SMILES string
+
+    def test_valid_endgroup(self):
+        from polyfingerprints.utils import test_endgroup
+
+        # Provided examples
+        self.assertFalse(test_endgroup("CCC"))  # has no open ends
+        self.assertFalse(
+            test_endgroup("C[CH]C")
+        )  # has a radical but not at the first atom
+        self.assertTrue(test_endgroup("[CH]C(C)"))  # has a radical at the terminal atom
+
+        # Additional test cases
+        self.assertFalse(test_endgroup(""))  # empty string
+        self.assertFalse(test_endgroup("CC[CH2]"))  # radical at the end of the molecule
+        self.assertTrue(
+            test_endgroup("[CH2][CH2]")
+        )  # radicals at the end start is optional
+        self.assertTrue(test_endgroup("[CH2]CC"))  # radical at the start
+
+        # Test cases that can potentially raise exceptions
+        self.assertFalse(test_endgroup("[CH2]CC("))  # unbalanced parentheses
+        self.assertFalse(test_endgroup("invalidSmiles"))  # not a valid SMILES string
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -135,3 +135,77 @@ def test_polymer_smiles(smiles: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def test_startgroup(smiles: str) -> bool:
+    """Test if a smiles string is a valid start group.
+    For this the last atom in the smiles must have a a missing bond (radical) like CC[CH2]
+
+    Args:
+        smiles (str): smiles string of the start group
+
+    Returns:
+        bool: True if the smiles string is a valid start group
+
+    Example:
+        >>> test_startgroup("CCC") # has no open ends
+        False
+        >>> test_startgroup("C[CH]C")  has a radical bot not at the terminal atom
+        False
+        >>> test_startgroup("C[CH](C)") # has a radical at the terminal atom
+        True
+    """
+    try:
+        basemol = polymol_fom_smiles(smiles)
+        # minimum two radicals
+        ori_n_radicals = Descriptors.NumRadicalElectrons(basemol)
+        if not ori_n_radicals >= 1:
+            return False
+        if not basemol:
+            return False
+
+        hmol = polymol_fom_smiles(smiles + "[H]")
+        if not hmol:
+            return False
+        if not Descriptors.NumRadicalElectrons(hmol) == ori_n_radicals - 1:
+            return False
+        return True
+    except Exception:
+        return False
+
+
+def test_endgroup(smiles: str) -> bool:
+    """Test if a smiles string is a valid end group.
+    For this the first atom in the smiles must have a a missing bond (radical) like [CH2]CC
+
+    Args:
+        smiles (str): smiles string of the end group
+
+    Returns:
+        bool: True if the smiles string is a valid end group
+
+    Example:
+        >>> test_endgroup("CCC") # has no open ends
+        False
+        >>> test_endgroup("C[CH]C")  has a radical bot not at the terminal atom
+        False
+        >>> test_endgroup("[CH]C(C)") # has a radical at the terminal atom
+        True
+    """
+    try:
+        basemol = polymol_fom_smiles(smiles)
+        # minimum two radicals
+        ori_n_radicals = Descriptors.NumRadicalElectrons(basemol)
+        if not ori_n_radicals >= 1:
+            return False
+        if not basemol:
+            return False
+
+        hmol = polymol_fom_smiles("[H]" + smiles)
+        if not hmol:
+            return False
+        if not Descriptors.NumRadicalElectrons(hmol) == ori_n_radicals - 1:
+            return False
+        return True
+    except Exception:
+        return False

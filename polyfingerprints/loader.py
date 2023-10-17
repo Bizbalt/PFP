@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from ._types import PfpData, FingerprintFunction
 from .core import create_pfp
-from .utils import test_polymer_smiles
+from .utils import test_polymer_smiles, test_endgroup, test_startgroup
 from .logger import PFPLOGGER
 
 
@@ -97,9 +97,18 @@ def csv_loader(
         start_group = None
         if start_group_column:
             start_group = rowdata[start_group_column]
+
+        if start_group and not test_startgroup(start_group):
+            PFPLOGGER.warning(f"Invalid SMILES string for start group: {start_group}")
+            continue
+
         end_group = None
         if end_group_column:
             end_group = rowdata[end_group_column]
+
+        if end_group and not test_endgroup(end_group):
+            PFPLOGGER.warning(f"Invalid SMILES string for end group: {end_group}")
+            continue
 
         pfpdat = PfpData(
             repeating_units=repeatingunits,
