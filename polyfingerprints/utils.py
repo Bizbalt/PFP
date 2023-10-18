@@ -99,7 +99,7 @@ def polymol_fom_smiles(smiles: str) -> Mol:
 
 def test_polymer_smiles(smiles: str) -> bool:
     """Test if a smiles string is a valid monomer representation.
-    For this the first and last atom of the molecule must have a a missing bond (radical) like [CH2][CH2](C(=O)(OC))
+    For this the first and last atom of the molecule must have a missing bond (radical) like [CH2][CH2](C(=O)(OC))
 
     Args:
         smiles (str): smiles string of the monomer
@@ -139,7 +139,8 @@ def test_polymer_smiles(smiles: str) -> bool:
 
 def test_startgroup(smiles: str) -> bool:
     """Test if a smiles string is a valid start group.
-    For this the last atom in the smiles must have a a missing bond (radical) like CC[CH2]
+    For this the last atom in the molecule chain resulting from the smiles must
+    have a missing bond (radical) like CC[CH2]
 
     Args:
         smiles (str): smiles string of the start group
@@ -150,7 +151,7 @@ def test_startgroup(smiles: str) -> bool:
     Example:
         >>> test_startgroup("CCC") # has no open ends
         False
-        >>> test_startgroup("C[CH]C")  has a radical bot not at the terminal atom
+        >>> test_startgroup("C[CH]C") # has a radical bot not at the terminal atom
         False
         >>> test_startgroup("C[CH](C)") # has a radical at the terminal atom
         True
@@ -176,7 +177,8 @@ def test_startgroup(smiles: str) -> bool:
 
 def test_endgroup(smiles: str) -> bool:
     """Test if a smiles string is a valid end group.
-    For this the first atom in the smiles must have a a missing bond (radical) like [CH2]CC
+    For this the first atom in the molecule chain resulting from the smiles must
+    have a missing bond (radical) like [CH2]CC
 
     Args:
         smiles (str): smiles string of the end group
@@ -187,9 +189,9 @@ def test_endgroup(smiles: str) -> bool:
     Example:
         >>> test_endgroup("CCC") # has no open ends
         False
-        >>> test_endgroup("C[CH]C")  has a radical bot not at the terminal atom
+        >>> test_endgroup("C[CH]C") # has a radical bot not at the terminal atom
         False
-        >>> test_endgroup("[CH]C(C)") # has a radical at the terminal atom
+        >>> test_endgroup("[CH](C)C") # has a radical at the terminal atom
         True
     """
     try:
