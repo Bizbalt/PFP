@@ -101,7 +101,7 @@ def weight_sum_fingerprints(
     return np.sum(fingerprints, axis=0)
 
 
-def reduce_fp_set(  # ToDo: move to utils.py? and add the second function to reduce forthcoming fingerprints likewise.
+def reduce_fp_set(
     fingerprints: List[np.ndarray[[-1], float]]
 ) -> Tuple[
     List[np.ndarray[[-1], float]], np.ndarray[[-1], bool], np.ndarray[[-1], float]
@@ -159,3 +159,44 @@ def reduce_fp_set(  # ToDo: move to utils.py? and add the second function to red
 
     # Return the reduced fingerprints, the mask, and a reference fingerprint
     return reduced_fps, mask, fingerprints[0].copy()
+
+
+def reduce_another_fp_set(
+    fingerprints: List[np.ndarray[[-1], float]], mask: np.ndarray[[-1], bool], reference_fp: np.ndarray[[-1], float]
+) -> List[np.ndarray[[-1], float]]:
+    """
+    Given multiple fingerprints, this function discards the same positions (features)
+    like the reduce_fp_set function did with a prior set, thus rendering the fingerprints comparable.
+
+    Args:
+        fingerprints (List[np.ndarray]): A list of 1D numpy arrays representing the fingerprints.
+        mask (np.ndarray): A boolean mask indicating the positions that were kept (False) or removed (True).
+        reference_fp (np.ndarray): The first fingerprint from the input, prior to any reductions (needed for the information loss calculation).
+
+    Returns:
+        Tuple[List[np.ndarray], np.ndarray, np.ndarray]:
+            - List[np.ndarray]: A list of 1D numpy arrays reduced by the mask.
+
+    Note:
+        This function assumes that all input fingerprints are of the same length and of the same length as the mask (prior set).
+        It also logs the loss which depicts the percentage of information lost by the reduction, respectively positions
+         that were new but removed for comparability.
+
+    Examples:
+        >>> fp4 = np.array([0.2, 0.6, 0.2])
+        >>> fp5 = np.array([0.2, 0.7, 0.1])
+        >>> mask = np.array([True, False, True])
+        >>> reference_fp = np.array([0.2, 0.5, 0.1])
+        >>> reduced_fps, loss = reduce_another_fp_set([fp4, fp5], mask, reference_fp)
+        >>> print(reduced_fps)  # Lists of reduced fingerprints
+        np.array([[[0.6], [0.7]])
+    """
+    reduced_fp = [new_fp[~mask] for new_fp in fingerprints]
+    bit_loss = len([new_fp2[~(mask & (new_fp2 == reference_fp))] for new_fp2 in fingerprints][0])
+
+    PFPLOGGER.info(
+        "loss for the first fingerprint is {0:.0f}%".format(
+            (1 - (len(reduced_fp[0]) / bit_loss)) * 100
+        )
+    )
+    return reduced_fp
