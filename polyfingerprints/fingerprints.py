@@ -187,7 +187,7 @@ def reduce_another_fp_set(
         >>> fp5 = np.array([0.2, 0.7, 0.1])
         >>> mask = np.array([True, False, True])
         >>> reference_fp = np.array([0.2, 0.5, 0.1])
-        >>> reduced_fps, loss = reduce_another_fp_set([fp4, fp5], mask, reference_fp)
+        >>> reduced_fps= reduce_another_fp_set([fp4, fp5], mask, reference_fp)
         >>> print(reduced_fps)  # Lists of reduced fingerprints
         np.array([[[0.6], [0.7]])
     """
