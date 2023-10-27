@@ -357,9 +357,7 @@ def initialize_training():
         return e_hours, e_mins, e_secs
 
     elapsed_times = []
-    for i in range(len(next_timeframe)):
-        if i == (len(next_timeframe) - 1):
-            break
+    for i in range(len(next_timeframe) - 1):
         elapsed_times.append(next_timeframe[i + 1] - next_timeframe[i])
 
     for elapsedTime in elapsed_times:
@@ -389,16 +387,8 @@ def initialize_training():
 
 
 def use_model(print_style="print_hexbin"):  # only works for datasets created with pfp!
-    src_root = Tk()
 
-    src_root.fileName = filedialog.askopenfilename(
-        filetypes=(("pytorch model", "*.pt"), ("All files", "*.*")))
-    Tk.destroy(self=src_root)
-
-    if not src_root.fileName.endswith(".pt"):
-        raise Exception("No pytorch-model Found! \n"
-                        "Rename to .pt file extension")
-    src_folder = os.path.dirname(src_root.fileName)
+    src_folder = dl.choose_source_folder()
 
     # reread pfp and dataset
     pickle_files_of_pfp = []
@@ -446,7 +436,7 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
     # !!!Layer_size will be set already when choosing which fp to use!!!
     print("source folder" + src_folder)
     loaded_model = TranTempPred()
-    loaded_model.load_state_dict(torch.load(src_root.fileName))
+    loaded_model.load_state_dict(torch.load(src_folder))
     loaded_model.eval()
 
     loss_deviation = loaded_model.loss

@@ -37,6 +37,19 @@ def choose_dataset():
         print("No file found!")
 
 
+def choose_source_folder():
+    src_root = Tk()
+
+    src_root.fileName = filedialog.askopenfilename(
+        filetypes=(("pytorch model", "*.pt"), ("All files", "*.*")))
+    Tk.destroy(self=src_root)
+
+    if not src_root.fileName.endswith(".pt"):
+        raise Exception("No pytorch-model Found! \n"
+                        "Rename to .pt file extension")
+    return os.path.dirname(src_root.fileName)
+
+
 def create_pfp_dataset(reduce=True):
     df = choose_dataset()
     end_groups = df["SMILES_start_group"], df["SMILES_end_group"]
@@ -74,7 +87,7 @@ def create_pfp_dataset(reduce=True):
     return df
 
 
-def read_out_other_fp_set(df, fp_name):  # read in fp created in an WSL2 environment and saved into csv
+def read_out_other_fp_set(df, fp_name):  # read in another fp created (eg. in an WSL2 environment) and saved into csv
     print("reading csv containing " + fp_name + "..." + "\n   search for \"cp_data_w_additional_fps.csv\"")
     df2 = choose_dataset()
 

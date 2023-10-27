@@ -18,3 +18,4 @@ class RunParameters:
     model_nr = "N" + "_" + USE_FP  # name the model will be saved under
 
     export_path = None
+    
