@@ -17,5 +17,9 @@ class RunParameters:
     pfp_const_type = None  # constitution type for pfp - either Subs+AP or morgan4 for the enhanced part
     model_nr = "N" + "_" + USE_FP  # name the model will be saved under
 
+    # initializing parameters, which are prone to change
+    Layer_size = 8118  # usual size will be ascertained with creating the learning input
+    last_loss = 0
+    current_epoch_nr = 0
     export_path = None
     
