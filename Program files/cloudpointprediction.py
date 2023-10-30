@@ -196,7 +196,7 @@ def initialize_training():
     # or df = dl.read_out_other_fp_set(df, USE_FP)  # map4_fp or morgan4_fp from csv with additional already created FPs
 
     # wt%|mass fraction and mass concentration in g/mL are approximately the same for water
-    df["sol_con"] = [b if isnan(a) else a for a, b in zip(df["polymer_concentration_wpercent"],
+    df["poly_con"] = [b if isnan(a) else a for a, b in zip(df["polymer_concentration_wpercent"],
                                                           df["polymer_concentration_mass_conc"])]
 
     # Ion types from Salts will be saved positionally for the NN to learn with respective conc
@@ -288,7 +288,7 @@ def initialize_training():
 
     # concatenation of learning material
     df["togeth"] = df["Mn"].apply(
-        lambda x: [(np.log10(x) / 6)]) + df["sol_con"].apply(
+        lambda x: [(np.log10(x) / 6)]) + df["poly_con"].apply(
         lambda x: [x]) + df["fp"].apply(
         lambda x: x.tolist()) + df["aqu_point"].apply(
         lambda x: [x]) + df["pH"].apply(
@@ -297,7 +297,7 @@ def initialize_training():
 
     # cleaving out fragmentary entries
     global df_edit
-    df_edit = df[["togeth", "Mn", "fp", "sol_con", "cloud_point"]].dropna()
+    df_edit = df[["togeth", "Mn", "fp", "poly_con", "cloud_point"]].dropna()
     print(df_edit)
 
     Pm.Layer_size = len(df_edit["togeth"][0])
@@ -409,14 +409,14 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
     When using other datasets for this model their input FP must reduced and combined with the rest for "togeth"
     load other fp and df, reduce fp with the fp-set loaded above and run following addition to combine:
     # df["togeth"] = df["Mn"].apply(
-    #     lambda x: [(np.log10(x) / 6)]) + df["sol_con"].apply(
+    #     lambda x: [(np.log10(x) / 6)]) + df["poly_con"].apply(
     #     lambda x: [x]) + df["fp"].apply(
     #     lambda x: x.tolist()) + df["aqu_point"].apply(
     #     lambda x: [x]) + df["pH"].apply(
     #     lambda x: [x]) + df["salts"].apply(
     #     lambda x: x.tolist())
     #
-    # df_edit = df[["togeth", "Mn", "fp", "sol_con", "cloud_point"]].dropna() #cleanup
+    # df_edit = df[["togeth", "Mn", "fp", "poly_con", "cloud_point"]].dropna() #cleanup
     '''
 
     Pm.Layer_size = len(df_edit["togeth"][0])
