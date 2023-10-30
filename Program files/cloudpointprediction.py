@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
 from tkinter import filedialog, Tk
-import polyfingerprints as pfp
 from math import isnan
 import datetime
 
@@ -15,28 +14,18 @@ from torch.utils.data import random_split, Dataset, DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 
-date_and_time = str(datetime.date.today()) + " " + datetime.datetime.now().strftime("%H:%M:%S").replace(":", " ")
-export_path = os.path.join(
-    (os.path.expanduser("~") + "\\Documents\\Jupyter Files\\Cloud Point determination"), date_and_time)
-os.makedirs(export_path, exist_ok=True)
-print("Files will be saved at {}".format(export_path))
+import dataloader as dl
+from parameters import RunParameters as Pm
 
-# empirical hyperparameter 0.001; 1000; 10000; 512*4
-LEARNING_RATE = LR = 1 * 10 ** -3
-BATCH_SIZE = 1000
-MAX_EPOCHS = 10000
-FINGERPRINT_VECTOR_SIZE = FP_SIZE = 512 * 6  # only important for PFP creation
-EARLY_STOPPING_PATIENCE, MIN_DELTA = 20, 0.1  # early stopping settings
-# LAYER_DEPTHS = 3
-# Layer_size = 8118  # usual size will be ascertained with creating the learning input
+dl.default_export_path()
+
+# initializing parameters, which are prone to change
+Layer_size = 8118  # usual size will be ascertained with creating the learning input
 last_loss = 0
 
-USE_FP = "pfp"  # choose map4_fp or morgan4_fp from csv with additional already created FPs or leave blank or pfp
-pfp_const_type = None  # constitution type for pfp - either Subs+AP or morgan4 for the enhanced part
-model_nr = "N" + "_" + USE_FP  # name the model will be saved under
 
 sns.set_theme(style="white", palette=None)
-print("LR: %s; BS: %s" % (LEARNING_RATE, BATCH_SIZE))
+print("LR: %s; BS: %s" % (Pm.LEARNING_RATE, Pm.BATCH_SIZE))
 
 
 class TranTempPred(pl.LightningModule):
@@ -66,7 +55,7 @@ class TranTempPred(pl.LightningModule):
         return x
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), LR)
+        optimizer = torch.optim.Adam(self.parameters(), Pm.LR)
         return optimizer
 
     def training_step(self, batch, batch_idx):
@@ -132,8 +121,8 @@ class DataManager(pl.LightningDataModule):
         dataset = AddDataSet()
         split = (np.array([0.8, 0.1, 0.1]) * len(dataset)).astype(int).tolist()
         split[0] += len(dataset) - sum(split)
-        self.train_set, self.val_set, self.test_set = random_split(dataset, split,
-                                                                   generator=torch.Generator().manual_seed(7))
+        self.train_set, self.val_set, self.test_set = random_split(
+            dataset, split, generator=torch.Generator().manual_seed(7))
 
     def train_dataloader(self):
         return DataLoader(self.train_set, batch_size=self.batch_size)
@@ -167,24 +156,24 @@ def print_plot(model, loss_function, save=False):
     # early stopping with a patience of 50 means the final training epoch is
     # somewhat between the current and current - patience
     if "current_epoch_nr" not in globals():
-        current_epoch_nr ="~"
+        current_epoch_nr = "~"
 
     plt.title(label="Training with {}/{} Epochs, {}lr & {}Bs; loss is {:.2f}".format(
-        current_epoch_nr, MAX_EPOCHS, LR, BATCH_SIZE, loss))
+        current_epoch_nr, Pm.MAX_EPOCHS, Pm.LR, Pm.BATCH_SIZE, loss))
 
     plt.ylabel(r"Measured $T_{cp}$ [°C]")
     plt.xlabel(r"Predicted $T_{cp}$ [°C]")
     if save:
-        plt.savefig(fname=os.path.join(export_path,
+        plt.savefig(fname=os.path.join(Pm.export_path,
                                        "{} Epochs, {}FPs, {}Lr & {}Bs; {:.2f}loss.png".format(
-                                           current_epoch_nr, FP_SIZE, LR,
-                                           BATCH_SIZE, loss)))
+                                           current_epoch_nr, Pm.FP_SIZE, Pm.LR,
+                                           Pm.BATCH_SIZE, loss)))
 
     plt.show()
     plt.close()
 
 
-def print_plot_2(loaded_model, loss_function, cur_epoch_nr, save=False,):
+def print_plot_2(loaded_model, loss_function, cur_epoch_nr, save=False, ):
     plot_dataset = AddDataSet()
 
     y_hat = loaded_model(plot_dataset.x_data)
@@ -200,81 +189,22 @@ def print_plot_2(loaded_model, loss_function, cur_epoch_nr, save=False,):
     plt.ylabel(r"Measured $T_{cp}$ [°C]")
     plt.xlabel(r"Predicted $T_{cp}$ [°C]")
     if save:
-        plt.savefig(fname=os.path.join(export_path,
-                                       "Trained for {} Epochs, hexbin-fig {:.2f} loss.png".format(
-                                           cur_epoch_nr, loss))
-                    , dpi=300)
+        plt.savefig(
+            fname=os.path.join(Pm.export_path, "Trained for {} Epochs, hexbin-fig {:.2f} loss.png".format(
+                cur_epoch_nr, loss))
+            , dpi=300)
 
     plt.show()
     plt.close()
 
 
 def initialize_training():
-    root = Tk()
-
-    root.fileName = filedialog.askopenfilename(
-        filetypes=(("semicolon-separated values", "*.csv"), ("All files", "*.*")))
-    Tk.destroy(self=root)
-    if not root.fileName.endswith(".csv"):
-        raise Exception("No CSV Found! \n"
-                        "Enter proper Excel Sheet separated by semicolon and comma as decimal key \n"
-                        "CSV UTF-8 (durch Trennzeichen getrennt)")
 
     # Time-stopping start
     next_timeframe = [datetime.datetime.now()]
 
-    try:
-        df = pd.read_csv(root.fileName, sep=";", decimal=",", encoding="utf8")
-        print("reading csv table...")
-
-    except pd.errors.EmptyDataError:
-        print("No file found!")
-
-    def create_pfp_dataset():
-        end_groups = df["SMILES_start_group"], df["SMILES_end_group"]
-        structure_tuple = ({A1: A2, B1: B2, C1: C2, D1: D2, E1: E2} for A1, A2, B1, B2, C1, C2, D1, D2, E1, E2 in
-                           zip(df["SMILES_repeating_unitA"], df["molpercent_repeating_unitA"],
-                               df["SMILES_repeating_unitB"],
-                               df["molpercent_repeating_unitB"], df["SMILES_repeating_unitC"],
-                               df["molpercent_repeating_unitC"], df["SMILES_repeating_unitD"],
-                               df["molpercent_repeating_unitD"], df["SMILES_repeating_unitE"],
-                               df["molpercent_repeating_unitE"]))  # arbitrarily many repeating units
-        molar_weights = df["Mn"]
-
-        print("creating Polymer-Fingerprints from Dataframe...")
-        fingerprints = [pfp.create_pfp(
-            start=start, end=end,
-            repeating_units={smiles: ratio for smiles, ratio in smiles_tuple.items() if not isnan(ratio)},
-            mol_weight=weight, intersection_fp_size=FP_SIZE, enhanced_sum_fp_size=FP_SIZE,
-            enhanced_fp_functions=pfp_const_type)
-            for start, end, smiles_tuple, weight in
-            zip(*end_groups, structure_tuple, molar_weights)]
-
-        print("reducing Fingerprint-set...")
-        reduced_fp, reduced_fp_mask, reduced_fp_mask2 = pfp.reduce_fp_set(*fingerprints)
-        print("fingerprint size for first Layer is %s" % len(reduced_fp[0]))
-
-        p_fp = [reduced_fp, reduced_fp_mask, reduced_fp_mask2]  # save pfp for later
-        with open(os.path.join(export_path, "P_FP_of_model_{}.pickle".format(model_nr)), "wb") as f:
-            pickle.dump(p_fp, f)
-
-        df["fp"] = reduced_fp
-        # df["fp"] = fingerprints  # without reduction
-
-    def read_out_other_fp_set(fp_name):  # read in fp created in an WSL2 environment and saved into csv
-        print("reading csv containing " + USE_FP + "...")
-        df2 = pd.read_csv(os.path.join("C:\\Users\\Nex\\Documents\\Jupyter Files\\Cloud Point determination",
-                                       "cp_data_w_additional_fps.csv"),
-                          sep=";", decimal=",", encoding="utf8")
-        # reverting np's __string__ print-style: rid linebreaks/brackets, whitespace to list, to float-list and to array
-        df["fp"] = df2[fp_name].apply(lambda x: np.array(
-            [int(x) for x in (x.replace("\n", "").replace("[", "").replace("]", "")).split()]))
-
-    # choose one of three fingerprints for training:
-    if USE_FP in ("", "pfp"):
-        create_pfp_dataset()
-    else:
-        read_out_other_fp_set(USE_FP)  # map4_fp or morgan4_fp from csv with additional already created FPs
+    df = dl.create_pfp_dataset()
+    # or df = dl.read_out_other_fp_set(df, USE_FP)  # map4_fp or morgan4_fp from csv with additional already created FPs
 
     # wt%|mass fraction and mass concentration in g/mL are approximately the same for water
     df["sol_con"] = [b if isnan(a) else a for a, b in zip(df["polymer_concentration_wpercent"],
@@ -389,10 +319,12 @@ def initialize_training():
 
     print("preparing model...")
     model = TranTempPred()
-    datamodule = DataManager(batch_size=BATCH_SIZE)
+    datamodule = DataManager(batch_size=Pm.BATCH_SIZE)
     trainer = Trainer(
-        max_epochs=MAX_EPOCHS,
-        callbacks=[pl.callbacks.EarlyStopping(monitor="val_loss", min_delta=MIN_DELTA, patience=EARLY_STOPPING_PATIENCE)])
+        max_epochs=Pm.MAX_EPOCHS,
+        callbacks=[
+            pl.callbacks.EarlyStopping(
+                monitor="val_loss", min_delta=Pm.MIN_DELTA, patience=Pm.EARLY_STOPPING_PATIENCE)])
     trainer.fit(model, datamodule)
 
     loss_deviation = model.loss
@@ -401,18 +333,19 @@ def initialize_training():
     # saving the model and all important to that after training
     df["pred"] = df["togeth"].apply(lambda x: float((model(torch.from_numpy(np.array(x)).float())).detach()))
     df["discrepancy"] = [pred - actual for pred, actual in zip(df["cloud_point"], df["pred"])]
-    df.drop("togeth", axis=1).to_csv(os.path.join(export_path,
+    df.drop("togeth", axis=1).to_csv(os.path.join(Pm.export_path,
                                                   "{}+-{} of {} Epochs, {}FPs, {}Lr & {}Bs; {:.2f}loss.csv".format(
-                                                      current_epoch_nr, EARLY_STOPPING_PATIENCE, MAX_EPOCHS, FP_SIZE,
-                                                      LR, BATCH_SIZE, last_loss)),
+                                                      current_epoch_nr, Pm.EARLY_STOPPING_PATIENCE, Pm.MAX_EPOCHS,
+                                                      Pm.FP_SIZE, Pm.LR, Pm.BATCH_SIZE, last_loss)),
                                      sep=";", decimal=",")
 
-    print("saving model under {}".format(str(os.path.join(export_path)) + "complete_model_{}.pt".format(model_nr)))
-    torch.save(model.state_dict(), os.path.join(export_path, "complete_model_{}.pt".format(model_nr)))
+    print("saving model under {}".format(
+        str(os.path.join(Pm.export_path)) + "complete_model_{}.pt".format(Pm.model_nr)))
+    torch.save(model.state_dict(), os.path.join(Pm.export_path, "complete_model_{}.pt".format(Pm.model_nr)))
 
     # all we need to reuse/load the model later with the exact same dataset.
     dataset_of_model = [df_edit, Layer_size, current_epoch_nr]
-    with open(os.path.join(export_path, "dataset_of_model_{}.pickle".format(model_nr)), "wb") as f:
+    with open(os.path.join(Pm.export_path, "dataset_of_model_{}.pickle".format(Pm.model_nr)), "wb") as f:
         pickle.dump(dataset_of_model, f)
 
     # time-stopping finish
@@ -424,25 +357,23 @@ def initialize_training():
         return e_hours, e_mins, e_secs
 
     elapsed_times = []
-    for i in range(len(next_timeframe)):
-        if i == (len(next_timeframe) - 1):
-            break
+    for i in range(len(next_timeframe) - 1):
         elapsed_times.append(next_timeframe[i + 1] - next_timeframe[i])
 
     for elapsedTime in elapsed_times:
         print("this took {:.0f} hours, {:.0f} minutes and {:.0f} seconds".format(*time_to_readable(elapsedTime)))
 
     timing = ["{:.0f} h, {:.0f} m and {:.0f} s".format(*time_to_readable(e_time)) for e_time in elapsed_times]
-    with open(os.path.join(export_path, "stats.txt"), mode="a") as f:
+    with open(os.path.join(Pm.export_path, "stats.txt"), mode="a") as f:
         f.write("Dataset generation and training took " + timing.__str__() + "\n")
-        f.write(model_nr + " with following parameters: \n")
+        f.write(Pm.model_nr + " with following parameters: \n")
         f.write("Last MSE loss is {:.3f}".format(last_loss) + "\n")
         f.write("The initial layer size was %s " % Layer_size + "\n")
-        f.write("LR: %s; BS: %s" % (LEARNING_RATE, BATCH_SIZE) + "\n")
-        f.write("fp used: " + USE_FP + "with " + pfp_const_type + "\n")
+        f.write("LR: %s; BS: %s" % (Pm.LEARNING_RATE, Pm.BATCH_SIZE) + "\n")
+        f.write("fp used: " + Pm.USE_FP + "with " + Pm.pfp_const_type + "\n")
         f.write("{} or up to {} less (Patience) of max {} "
                 "Epochs with early stopping patience of and a min_delta of 0.01".format(
-            current_epoch_nr, EARLY_STOPPING_PATIENCE, MAX_EPOCHS, EARLY_STOPPING_PATIENCE))
+            current_epoch_nr, Pm.EARLY_STOPPING_PATIENCE, Pm.MAX_EPOCHS, Pm.EARLY_STOPPING_PATIENCE))
 
 
 '''
@@ -456,16 +387,8 @@ def initialize_training():
 
 
 def use_model(print_style="print_hexbin"):  # only works for datasets created with pfp!
-    src_root = Tk()
 
-    src_root.fileName = filedialog.askopenfilename(
-        filetypes=(("pytorch model", "*.pt"), ("All files", "*.*")))
-    Tk.destroy(self=src_root)
-
-    if not src_root.fileName.endswith(".pt"):
-        raise Exception("No pytorch-model Found! \n"
-                        "Rename to .pt file extension")
-    src_folder = os.path.dirname(src_root.fileName)
+    src_folder = dl.choose_source_folder()
 
     # reread pfp and dataset
     pickle_files_of_pfp = []
@@ -489,7 +412,7 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
     if len(loaded_dataset) > 3:
         current_epoch_nr = loaded_dataset[2]
     elif "current_epoch_nr" not in globals():
-        current_epoch_nr = "{} Epochs max".format(MAX_EPOCHS)
+        current_epoch_nr = "{} Epochs max".format(Pm.MAX_EPOCHS)
 
     global df_edit
     df_edit = loaded_dataset[0]
@@ -513,7 +436,7 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
     # !!!Layer_size will be set already when choosing which fp to use!!!
     print("source folder" + src_folder)
     loaded_model = TranTempPred()
-    loaded_model.load_state_dict(torch.load(src_root.fileName))
+    loaded_model.load_state_dict(torch.load(src_folder))
     loaded_model.eval()
 
     loss_deviation = loaded_model.loss
@@ -528,8 +451,8 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
         set_names = ["train_set", "val_set", "test_set"]
 
         for set, set_name in zip(sets, set_names):
-            set_x_data = torch.cat([torch.unsqueeze(x, 0) for (x,y) in set])
-            set_y_data = torch.cat([torch.unsqueeze(y, 0) for (x,y) in set])
+            set_x_data = torch.cat([torch.unsqueeze(x, 0) for (x, y) in set])
+            set_y_data = torch.cat([torch.unsqueeze(y, 0) for (x, y) in set])
             y_hat = loaded_model(set_x_data)
             x = y_hat.detach().numpy()
             y = set_y_data.numpy()
@@ -540,13 +463,14 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
             plt.plot(*o_line, color="orange")
             # plt.title(label="Training with {}/{} Epochs; loss is {:.2f}".format(current_epoch_nr, MAX_EPOCHS, loss))
             # calculating R^2/coefficient of determination:
-            cod = 1 - (np.sum((y - x) ** 2))/(np.sum((y - np.mean(y)) ** 2))
+            cod = 1 - (np.sum((y - x) ** 2)) / (np.sum((y - np.mean(y)) ** 2))
             plt.colorbar()
             plt.ylabel(r"Measured $T_{cp}$ [°C]")
             plt.xlabel(r"Predicted $T_{cp}$ [°C]")
             plt.xlim(0, 100)
             plt.ylim(0, 100)
-            plt.savefig(fname=os.path.join(export_path, "{} MSE{:.2f}, CoD {:.2f}.png".format(set_name, loss, cod)), dpi=300)
+            plt.savefig(fname=os.path.join(Pm.export_path, "{} MSE{:.2f}, CoD {:.2f}.png".format(set_name, loss, cod)),
+                        dpi=300)
             plt.show()
             plt.close()
 
@@ -560,5 +484,4 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
 
 if __name__ == "__main__":
     initialize_training()
-    #use_model("single_sets")
-
+    # use_model("single_sets")

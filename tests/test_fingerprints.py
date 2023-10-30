@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from rdkit import Chem
+from unittest.mock import patch
 
 
 class TestFingerprintFunctions(unittest.TestCase):
@@ -51,26 +52,50 @@ class TestFingerprintFunctions(unittest.TestCase):
 
 
 class TestReduceFPSet(unittest.TestCase):
-    def test_reduce_fp_set(self):
+    @patch("polyfingerprints.PFPLOGGER.info")  # Mock the "info" method of the logger
+    def test_reduce_fp_set(self, mock_logger):
         from polyfingerprints.fingerprints import reduce_fp_set
 
         # Sample fingerprints for testing
         fp1 = np.array([0.2, 0.5, 0.1])
         fp2 = np.array([0.2, 0.6, 0.1])
-        fp3 = np.array([0.2, 0.7, 0.1])
+        fp3 = np.array([0.2, 0.7, 0.2])
 
         reduced_fps, mask, reference_fp = reduce_fp_set([fp1, fp2, fp3])
 
         # Check that the reduced fingerprints have the expected values
         np.testing.assert_array_equal(
-            reduced_fps, [np.array([0.5]), np.array([0.6]), np.array([0.7])]
+            reduced_fps, [np.array([0.5, 0.1]), np.array([0.6, 0.1]), np.array([0.7, 0.2])]
         )
 
         # Check that the mask is correct
-        np.testing.assert_array_equal(mask, np.array([True, False, True]))
+        np.testing.assert_array_equal(mask, np.array([True, False, False]))
 
         # Check that the reference fingerprint is correct
         np.testing.assert_array_equal(reference_fp, fp1)
+
+        # Check the logging output
+        mock_logger.assert_called_once_with("reduced size by 33%")
+
+
+class TestReduceAnotherFPSet(unittest.TestCase):
+    # catch the logging output
+    @patch("polyfingerprints.PFPLOGGER.info")  # Mock the "info" method of the logger
+    def test_reduce_another_fp_set(self, mock_logger):
+        from polyfingerprints.fingerprints import reduce_another_fp_set
+
+        # Sample fingerprints, mask, and reference_fp for testing
+        fp4 = np.array([0.2, 0.6, 0.2])
+        fp5 = np.array([0.2, 0.7, 0.1])
+        mask = np.array([True, False, True])
+        reference_fp = np.array([0.2, 0.5, 0.1])
+        reduced_fps = reduce_another_fp_set(fingerprints=[fp4, fp5], mask=mask, reference_fp=reference_fp)
+
+        # Check that the reduced fingerprints have the expected values
+        np.testing.assert_array_equal(reduced_fps, [np.array([0.6]), np.array([0.7])])
+
+        # Check the logging output
+        mock_logger.assert_called_once_with("loss for the first fingerprint is 50%")
 
 
 if __name__ == "__main__":
