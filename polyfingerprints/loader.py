@@ -20,6 +20,7 @@ def csv_loader(
     intersection_fp_size: int | None = 2048,
     enhanced_sum_fp_size: int | None = 2048,
     enhanced_fp_functions: List[FingerprintFunction] | None = None,
+    additional_columns: Optional[List[str]] = None,
     **kwargs,
 ):
     """Loads the data to create a Polyfingerprint from a csv file.
@@ -38,9 +39,14 @@ def csv_loader(
 
     """
     df = pd.read_csv(csv, **kwargs)
+    if additional_columns is None:
+        additional_columns = []
 
     # check df:
-    colstofind = [smiles for (smiles, amount) in repeating_unit_columns] + [mw_column]
+    colstofind = [mw_column] + additional_columns
+    for smiles, amount in repeating_unit_columns:
+        colstofind.append(smiles)
+        colstofind.append(amount)
 
     if y:
         colstofind.append(y)
