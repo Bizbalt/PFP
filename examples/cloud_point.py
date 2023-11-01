@@ -8,7 +8,10 @@ import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import polyfingerprints as pfp
+from polyfingerprints import models as pfp_models
 from pprint import pprint
+
+SEED = 42
 
 RAW_CSV_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "cloud_points_data.csv"
@@ -206,6 +209,12 @@ def raw_data_to_dataset():
         # "unique_ru": list(set(all_ru)),
         "num_unique_additives": len(all_additives),
         "additives": all_additives,
+        "repeating_unit_columns": [
+            f"SMILES_repeating_unit{c}" for c in repeating_unit_columns
+        ],
+        "repeating_unit_molpercent_columns": [
+            f"molpercent_repeating_unit{c}" for c in repeating_unit_columns
+        ],
     }
 
     with open(PARSED_INFO_JSON_PATH, "w") as f:
@@ -215,37 +224,98 @@ def raw_data_to_dataset():
 def generate_data():
     with open(PARSED_INFO_JSON_PATH, "r") as f:
         info = json.load(f)
+    #
+    from pprint import pprint
 
+    pprint(info)
+    print(
+        tuple(
+            zip(
+                info["repeating_unit_columns"],
+                info["repeating_unit_molpercent_columns"],
+            )
+        )
+    )
     data = pfp.loader.csv_loader(
         PARSED_CSV_PATH,
-        repeating_unit_columns=[
-            ("SMILES_repeating_unit" + a, "molpercent_repeating_unit" + a)
-            for a in "ABCDE"
-        ],
+        repeating_unit_columns=tuple(
+            zip(
+                info["repeating_unit_columns"],
+                info["repeating_unit_molpercent_columns"],
+            )
+        ),
         y="cloud_point",
-        sep=";",
-        decimal=",",
         mw_column="Mn",
         start_group_column="SMILES_start_group",
         end_group_column="SMILES_end_group",
         additional_columns=[
             "pH",
-            "additive1",
-            "additive2",
-            "additive1_concentration_molar",
-            "additive2_concentration_molar",
             "def_type",
-        ],
+            "poly_conc",
+            "log_Mn",
+        ]
+        + ["additive_" + str(i) for i in range(info["num_unique_additives"])],
     )
 
     data, reduced_fp_data = pfp.reduce_pfp_in_dataset(data)
 
-    pprint(data[-10:])
+    pprint(data[-4:])
     print("infos")
     infos = {"fp_size": len(data[0]["pfp"])}
     pprint(infos)
+    return data
+
+
+def generate_model(ip: int, op: int, lr=1e-4):
+    model = pfp_models.FCCModel(input_dim=ip, output_dim=op, lr=lr)
+    print(model)
+    return model
+
+
+def train_model(model, x, y, batch_size=900, epochs=700 * 2):
+    from pytorch_lightning import Trainer
+    import torch
+    from torch.utils.data import DataLoader, TensorDataset
+
+    # split into train test and validation
+    rng = np.random.RandomState(SEED)
+    indices = np.arange(len(x))
+    rng.shuffle(indices)
+    train_indices = indices[: int(len(indices) * 0.8)]
+    test_indices = indices[int(len(indices) * 0.8) : int(len(indices) * 0.9)]
+    val_indices = indices[int(len(indices) * 0.9) :]
+
+    x_train = torch.tensor(x[train_indices], dtype=torch.float32)
+    y_train = torch.tensor(y[train_indices], dtype=torch.float32)
+    x_test = torch.tensor(x[test_indices], dtype=torch.float32)
+    y_test = torch.tensor(y[test_indices], dtype=torch.float32)
+    x_val = torch.tensor(x[val_indices], dtype=torch.float32)
+    y_val = torch.tensor(y[val_indices], dtype=torch.float32)
+
+    train_ds = TensorDataset(x_train, y_train)
+    test_ds = TensorDataset(x_test, y_test)
+    val_ds = TensorDataset(x_val, y_val)
+
+    train_dl = DataLoader(train_ds, batch_size=batch_size)
+    test_dl = DataLoader(test_ds, batch_size=batch_size)
+    val_dl = DataLoader(val_ds, batch_size=batch_size)
+
+    trainer = Trainer(max_epochs=epochs, log_every_n_steps=1)
+    trainer.fit(model, train_dl, val_dl)
+    trainer.test(model, test_dl)
 
 
 if __name__ == "__main__":
-    raw_data_to_dataset()
-    # generate_data()
+    from pprint import pprint
+
+    # raw_data_to_dataset()
+    data = generate_data()
+    data = [d for d in data if d["y"] is not None]
+    for d in data:
+        if any(np.isnan(d["pfp"])):
+            pprint(d)
+            raise ValueError("NaN in fingerprint")
+    x, y = pfp.loader.to_input_output_data(data)
+
+    model = generate_model(x.shape[1], y.shape[1], lr=1e-2)
+    train_model(model, x, y)

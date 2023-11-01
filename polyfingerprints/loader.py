@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, Union
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -10,13 +10,44 @@ from .utils import test_polymer_smiles, test_endgroup, test_startgroup
 from .logger import PFPLOGGER
 
 
+def data_encoder_picker(
+    data: pd.Series,
+):
+    """Picks the right encoder for the given data."""
+    strtype = str(data.dtype)
+    if strtype == "object":
+        # one hot encoding
+        uniques = data.unique().tolist()
+        length = len(uniques)
+
+        def _oh_ecoder(x):
+            arr = np.zeros(length + 1)
+            try:
+                index = uniques.index(x)
+                arr[index] = 1
+            except ValueError:
+                arr[-1] = 1
+            return arr
+
+        return _oh_ecoder
+
+    elif (
+        strtype.startswith("float")
+        or strtype.startswith("int")
+        or strtype.startswith("bool")
+    ):
+        return lambda x: np.array([x], dtype=np.float32)
+
+    raise ValueError(f"Data type {strtype} not supported.")
+
+
 def csv_loader(
     csv: str,
     repeating_unit_columns: List[Tuple[str, str]],
     mw_column: str,
     start_group_column: Optional[str] = None,
     end_group_column: Optional[str] = None,
-    y: Optional[str] = None,
+    y: Optional[Union[str, List[str]]] = None,
     intersection_fp_size: int | None = 2048,
     enhanced_sum_fp_size: int | None = 2048,
     enhanced_fp_functions: List[FingerprintFunction] | None = None,
@@ -49,28 +80,44 @@ def csv_loader(
         colstofind.append(amount)
 
     if y:
-        colstofind.append(y)
+        if isinstance(y, str):
+            y = [y]
+        colstofind.extend(y)
     if start_group_column:
         colstofind.append(start_group_column)
     if end_group_column:
         colstofind.append(end_group_column)
 
     # check if all columns are in df
-    for col in colstofind:
-        if col not in df.columns:
-            raise ValueError(f"Column '{col}' not found in csv file.")
+
+    missing_cols = list(set(colstofind) - set(df.columns))
+    if len(missing_cols) > 0:
+        raise ValueError(
+            f"Column(s) '{', '.join(missing_cols)}' not found in csv file."
+        )
 
     # print all other columns
     for col in df.columns:
         if col not in colstofind:
             print(f"Warning: Column '{col}' not used.")
 
+    # additional_data_types
+    additional_data_encoder = {
+        col: data_encoder_picker(df[col]) for col in additional_columns
+    }
+
     alldata: List[PfpData] = []
+    additional_data_indices = None
     for _, rowdata in tqdm(df.iterrows(), total=len(df), desc="Loading data"):
         repeatingunits: Dict[str, float] = {}
         for smiles, amount in repeating_unit_columns:
             # skip if no smiles or amount are None or NaN
-            if not rowdata[smiles] or not rowdata[amount] or np.isnan(rowdata[amount]):
+            if (
+                not rowdata[smiles]
+                or not rowdata[amount]
+                or np.isnan(rowdata[amount])
+                or np.isnan(rowdata[mw_column])
+            ):
                 continue
             if rowdata[smiles] in repeatingunits:
                 repeatingunits[rowdata[smiles]] += rowdata[amount]
@@ -97,9 +144,10 @@ def csv_loader(
 
         dy = None
         if y:
-            dy = rowdata[y]
-            if np.isnan(dy):
+            dy = rowdata[y].values.astype(np.float32)
+            if any(np.isnan(dy)):
                 dy = None
+
         start_group = None
         if start_group_column:
             start_group = rowdata[start_group_column]
@@ -116,12 +164,23 @@ def csv_loader(
             PFPLOGGER.warning(f"Invalid SMILES string for end group: {end_group}")
             continue
 
+        _additional_data = [
+            additional_data_encoder[col](rowdata[col])
+            for col in additional_data_encoder
+        ]
+        if additional_data_indices is None:
+            additional_data_indices = np.array(
+                [0] + [len(x) for x in _additional_data]
+            ).cumsum()[:-1]
         pfpdat = PfpData(
             repeating_units=repeatingunits,
             y=dy,
             mw=rowdata[mw_column],
             startgroup=start_group,
             endgroup=end_group,
+            additional_data_keys=additional_columns,
+            additional_data_indices=additional_data_indices,
+            additional_data=np.concatenate(_additional_data),
         )
         alldata.append(pfpdat)
 
@@ -136,3 +195,13 @@ def csv_loader(
             enhanced_fp_functions=enhanced_fp_functions,
         )
     return alldata
+
+
+def to_input_output_data(fpdata: List[PfpData]) -> Tuple[np.ndarray, np.ndarray]:
+    input_data = np.array(
+        [np.concatenate([d["pfp"], d["additional_data"]]) for d in fpdata]
+    )
+    output_data = np.array([d["y"] for d in fpdata])
+
+    print(output_data)
+    return input_data, output_data

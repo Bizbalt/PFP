@@ -5,6 +5,7 @@ from .fingerprints import (
     merge_bit_fingerprints,
     weight_sum_fingerprints,
     reduce_fp_set,
+    create_AtomicPairFingerprint,
 )
 from ._types import FingerprintFunction, PfpData
 from .utils import repeating_unit_combinations, calc_polymer_shares
@@ -48,7 +49,10 @@ def create_pfp(
         end = "[H]"
 
     if not enhanced_fp_functions:
-        enhanced_fp_functions: List[FingerprintFunction] = [create_RDKFingerprint]
+        enhanced_fp_functions: List[FingerprintFunction] = [
+            create_RDKFingerprint,
+            create_AtomicPairFingerprint,
+        ]
 
     # create intersection fingerprint
     # create all possible combinations of repeating units

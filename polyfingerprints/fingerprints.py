@@ -1,8 +1,42 @@
 from typing import List, Tuple
 import numpy as np
 from rdkit import Chem
+from rdkit.Chem.AtomPairs import Pairs
 from .utils import polymol_fom_smiles
 from .logger import PFPLOGGER
+
+
+def create_AtomicPairFingerprint(
+    smiles_s: List[str], fp_size: int = 2048, complement: bool = False
+) -> List[np.ndarray]:
+    """
+    Creates a list of AtomicPairFingerprints from a list of SMILES strings.
+
+    Args:
+        smiles_s (List[str]): List of SMILES strings.
+        fp_size (int, optional): Size of the fingerprint. Defaults to 2048.
+        complement (bool, optional): If True, the SMILES strings are patched
+            with [H][H] at the beginning and end, should be true if working
+            with repeating unit smiles to hide the radicals. Defaults to False.
+    Returns:
+        List[np.array]: List of AtomicPairFingerprints.
+    """
+    if complement:
+        smiles_list = [("[H]{}[H]".format(smiles)) for smiles in smiles_s]
+    else:
+        smiles_list = smiles_s
+
+    fingerprint_s = [
+        np.array(
+            list(
+                Pairs.GetHashedAtomPairFingerprint(
+                    polymol_fom_smiles(smiles), nBits=fp_size
+                )
+            )
+        )
+        for smiles in smiles_list
+    ]
+    return fingerprint_s
 
 
 def create_RDKFingerprint(
@@ -161,7 +195,9 @@ def reduce_fp_set(
 
 
 def reduce_another_fp_set(
-    fingerprints: List[np.ndarray[[-1], float]], mask: np.ndarray[[-1], bool], reference_fp: np.ndarray[[-1], float]
+    fingerprints: List[np.ndarray[[-1], float]],
+    mask: np.ndarray[[-1], bool],
+    reference_fp: np.ndarray[[-1], float],
 ) -> List[np.ndarray[[-1], float]]:
     """
     Given multiple fingerprints, this function discards the same positions (features)
@@ -191,7 +227,9 @@ def reduce_another_fp_set(
         np.array([[[0.6], [0.7]])
     """
     reduced_fp = [new_fp[~mask] for new_fp in fingerprints]
-    bit_loss = len([new_fp2[~(mask & (new_fp2 == reference_fp))] for new_fp2 in fingerprints][0])
+    bit_loss = len(
+        [new_fp2[~(mask & (new_fp2 == reference_fp))] for new_fp2 in fingerprints][0]
+    )
 
     PFPLOGGER.info(
         "loss for the first fingerprint is {0:.0f}%".format(
