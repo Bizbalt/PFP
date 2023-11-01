@@ -308,7 +308,7 @@ def train_model(model, x, y, batch_size=900, epochs=700 * 2):
 if __name__ == "__main__":
     from pprint import pprint
 
-    # raw_data_to_dataset()
+    raw_data_to_dataset()
     data = generate_data()
     data = [d for d in data if d["y"] is not None]
     for d in data:
