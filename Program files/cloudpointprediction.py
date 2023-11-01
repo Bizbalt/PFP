@@ -1,10 +1,8 @@
 import os
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
-from tkinter import filedialog, Tk
 from math import isnan
 import datetime
 
@@ -19,11 +17,6 @@ from parameters import RunParameters as Pm
 
 dl.default_export_path()
 
-# initializing parameters, which are prone to change
-Layer_size = 8118  # usual size will be ascertained with creating the learning input
-last_loss = 0
-
-
 sns.set_theme(style="white", palette=None)
 print("LR: %s; BS: %s" % (Pm.LEARNING_RATE, Pm.BATCH_SIZE))
 
@@ -33,7 +26,7 @@ class TranTempPred(pl.LightningModule):
     def __init__(self):
         super().__init__()
         layer = []
-        mom_layer_size = Layer_size
+        mom_layer_size = Pm.Layer_size
         while mom_layer_size >= 3:
             next_layer_size = int(mom_layer_size / 3)
             layer.append(torch.nn.Linear(mom_layer_size, next_layer_size))
@@ -72,8 +65,7 @@ class TranTempPred(pl.LightningModule):
         loss = self.loss(y_hat, y)
         self.log("val_loss", loss)
 
-        global current_epoch_nr
-        current_epoch_nr = self.current_epoch
+        Pm.current_epoch_nr = self.current_epoch
         # # animation for display of learning curve
         # epoch = self.current_epoch
         # plt.plot([y.max(), y.min()], [y.max(), y.min()])
@@ -142,8 +134,8 @@ def print_plot(model, loss_function, save=False):
     plot_x = y_hat.detach().numpy()  # detach() to avoid changing the tensor in its original save
     plot_y = plot_dataset.y_data.numpy()
     loss = loss_function(y_hat, plot_dataset.y_data)
-    global last_loss
-    last_loss = loss
+
+    Pm.last_loss = loss
 
     print("------- overall Loss {} -------".format(loss))
     # adding in an orientation line
@@ -155,18 +147,16 @@ def print_plot(model, loss_function, save=False):
     plt.plot(plot_x, plot_y, "o")
     # early stopping with a patience of 50 means the final training epoch is
     # somewhat between the current and current - patience
-    if "current_epoch_nr" not in globals():
-        current_epoch_nr = "~"
 
     plt.title(label="Training with {}/{} Epochs, {}lr & {}Bs; loss is {:.2f}".format(
-        current_epoch_nr, Pm.MAX_EPOCHS, Pm.LR, Pm.BATCH_SIZE, loss))
+        Pm.current_epoch_nr, Pm.MAX_EPOCHS, Pm.LR, Pm.BATCH_SIZE, loss))
 
     plt.ylabel(r"Measured $T_{cp}$ [°C]")
     plt.xlabel(r"Predicted $T_{cp}$ [°C]")
     if save:
         plt.savefig(fname=os.path.join(Pm.export_path,
                                        "{} Epochs, {}FPs, {}Lr & {}Bs; {:.2f}loss.png".format(
-                                           current_epoch_nr, Pm.FP_SIZE, Pm.LR,
+                                           Pm.current_epoch_nr, Pm.FP_SIZE, Pm.LR,
                                            Pm.BATCH_SIZE, loss)))
 
     plt.show()
@@ -183,7 +173,7 @@ def print_plot_2(loaded_model, loss_function, cur_epoch_nr, save=False, ):
     o_line = [[y.max(), y.min()], [y.max(), y.min()]]
     plt.hexbin(x, y, gridsize=30, cmap="ocean_r", linewidths=0.01)
     plt.plot(*o_line, color="orange")
-    # plt.title(label="Training with {}/{} Epochs; loss is {:.2f}".format(current_epoch_nr,
+    # plt.title(label="Training with {}/{} Epochs; loss is {:.2f}".format(Pm.current_epoch_nr,
     # MAX_EPOCHS, loss))
     plt.colorbar()
     plt.ylabel(r"Measured $T_{cp}$ [°C]")
@@ -199,7 +189,6 @@ def print_plot_2(loaded_model, loss_function, cur_epoch_nr, save=False, ):
 
 
 def initialize_training():
-
     # Time-stopping start
     next_timeframe = [datetime.datetime.now()]
 
@@ -207,7 +196,7 @@ def initialize_training():
     # or df = dl.read_out_other_fp_set(df, USE_FP)  # map4_fp or morgan4_fp from csv with additional already created FPs
 
     # wt%|mass fraction and mass concentration in g/mL are approximately the same for water
-    df["sol_con"] = [b if isnan(a) else a for a, b in zip(df["polymer_concentration_wpercent"],
+    df["poly_con"] = [b if isnan(a) else a for a, b in zip(df["polymer_concentration_wpercent"],
                                                           df["polymer_concentration_mass_conc"])]
 
     # Ion types from Salts will be saved positionally for the NN to learn with respective conc
@@ -299,7 +288,7 @@ def initialize_training():
 
     # concatenation of learning material
     df["togeth"] = df["Mn"].apply(
-        lambda x: [(np.log10(x) / 6)]) + df["sol_con"].apply(
+        lambda x: [(np.log10(x) / 6)]) + df["poly_con"].apply(
         lambda x: [x]) + df["fp"].apply(
         lambda x: x.tolist()) + df["aqu_point"].apply(
         lambda x: [x]) + df["pH"].apply(
@@ -308,11 +297,10 @@ def initialize_training():
 
     # cleaving out fragmentary entries
     global df_edit
-    df_edit = df[["togeth", "Mn", "fp", "sol_con", "cloud_point"]].dropna()
+    df_edit = df[["togeth", "Mn", "fp", "poly_con", "cloud_point"]].dropna()
     print(df_edit)
 
-    global Layer_size
-    Layer_size = len(df_edit["togeth"][0])
+    Pm.Layer_size = len(df_edit["togeth"][0])
 
     # time-stopping breakpoint after dataset gen
     next_timeframe.append(datetime.datetime.now())
@@ -335,8 +323,8 @@ def initialize_training():
     df["discrepancy"] = [pred - actual for pred, actual in zip(df["cloud_point"], df["pred"])]
     df.drop("togeth", axis=1).to_csv(os.path.join(Pm.export_path,
                                                   "{}+-{} of {} Epochs, {}FPs, {}Lr & {}Bs; {:.2f}loss.csv".format(
-                                                      current_epoch_nr, Pm.EARLY_STOPPING_PATIENCE, Pm.MAX_EPOCHS,
-                                                      Pm.FP_SIZE, Pm.LR, Pm.BATCH_SIZE, last_loss)),
+                                                      Pm.current_epoch_nr, Pm.EARLY_STOPPING_PATIENCE, Pm.MAX_EPOCHS,
+                                                      Pm.FP_SIZE, Pm.LR, Pm.BATCH_SIZE, Pm.last_loss)),
                                      sep=";", decimal=",")
 
     print("saving model under {}".format(
@@ -344,7 +332,7 @@ def initialize_training():
     torch.save(model.state_dict(), os.path.join(Pm.export_path, "complete_model_{}.pt".format(Pm.model_nr)))
 
     # all we need to reuse/load the model later with the exact same dataset.
-    dataset_of_model = [df_edit, Layer_size, current_epoch_nr]
+    dataset_of_model = [df_edit, Pm.Layer_size, Pm.current_epoch_nr]
     with open(os.path.join(Pm.export_path, "dataset_of_model_{}.pickle".format(Pm.model_nr)), "wb") as f:
         pickle.dump(dataset_of_model, f)
 
@@ -367,13 +355,13 @@ def initialize_training():
     with open(os.path.join(Pm.export_path, "stats.txt"), mode="a") as f:
         f.write("Dataset generation and training took " + timing.__str__() + "\n")
         f.write(Pm.model_nr + " with following parameters: \n")
-        f.write("Last MSE loss is {:.3f}".format(last_loss) + "\n")
-        f.write("The initial layer size was %s " % Layer_size + "\n")
+        f.write("Last MSE loss is {:.3f}".format(Pm.last_loss) + "\n")
+        f.write("The initial layer size was %s " % Pm.Layer_size + "\n")
         f.write("LR: %s; BS: %s" % (Pm.LEARNING_RATE, Pm.BATCH_SIZE) + "\n")
         f.write("fp used: " + Pm.USE_FP + "with " + Pm.pfp_const_type + "\n")
         f.write("{} or up to {} less (Patience) of max {} "
                 "Epochs with early stopping patience of and a min_delta of 0.01".format(
-            current_epoch_nr, Pm.EARLY_STOPPING_PATIENCE, Pm.MAX_EPOCHS, Pm.EARLY_STOPPING_PATIENCE))
+            Pm.current_epoch_nr, Pm.EARLY_STOPPING_PATIENCE, Pm.MAX_EPOCHS, Pm.EARLY_STOPPING_PATIENCE))
 
 
 '''
@@ -410,9 +398,9 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
 
     # handling whether loaded dataset already
     if len(loaded_dataset) > 3:
-        current_epoch_nr = loaded_dataset[2]
-    elif "current_epoch_nr" not in globals():
-        current_epoch_nr = "{} Epochs max".format(Pm.MAX_EPOCHS)
+        Pm.current_epoch_nr = loaded_dataset[2]
+    else:
+        Pm.current_epoch_nr = "{} Epochs max".format(Pm.MAX_EPOCHS)
 
     global df_edit
     df_edit = loaded_dataset[0]
@@ -421,19 +409,18 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
     When using other datasets for this model their input FP must reduced and combined with the rest for "togeth"
     load other fp and df, reduce fp with the fp-set loaded above and run following addition to combine:
     # df["togeth"] = df["Mn"].apply(
-    #     lambda x: [(np.log10(x) / 6)]) + df["sol_con"].apply(
+    #     lambda x: [(np.log10(x) / 6)]) + df["poly_con"].apply(
     #     lambda x: [x]) + df["fp"].apply(
     #     lambda x: x.tolist()) + df["aqu_point"].apply(
     #     lambda x: [x]) + df["pH"].apply(
     #     lambda x: [x]) + df["salts"].apply(
     #     lambda x: x.tolist())
     #
-    # df_edit = df[["togeth", "Mn", "fp", "sol_con", "cloud_point"]].dropna() #cleanup
+    # df_edit = df[["togeth", "Mn", "fp", "poly_con", "cloud_point"]].dropna() #cleanup
     '''
 
-    global Layer_size
-    Layer_size = len(df_edit["togeth"][0])
-    # !!!Layer_size will be set already when choosing which fp to use!!!
+    Pm.Layer_size = len(df_edit["togeth"][0])
+    # !this Layer_size will be set already when choosing which fp to use!
     print("source folder" + src_folder)
     loaded_model = TranTempPred()
     loaded_model.load_state_dict(torch.load(src_folder))
@@ -461,7 +448,7 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
             o_line = [[y.max(), y.min()], [y.max(), y.min()]]
             plt.hexbin(x, y, gridsize=30, cmap="ocean_r", linewidths=0.01)
             plt.plot(*o_line, color="orange")
-            # plt.title(label="Training with {}/{} Epochs; loss is {:.2f}".format(current_epoch_nr, MAX_EPOCHS, loss))
+            # plt.title(label="Training with {}/{} Epochs; loss is {:.2f}".format(Pm.current_epoch_nr, MAX_EPOCHS, loss))
             # calculating R^2/coefficient of determination:
             cod = 1 - (np.sum((y - x) ** 2)) / (np.sum((y - np.mean(y)) ** 2))
             plt.colorbar()
@@ -479,7 +466,7 @@ def use_model(print_style="print_hexbin"):  # only works for datasets created wi
     elif print_style == "detailed":
         print_plot(loaded_model, loss_deviation, save=True)
     else:
-        print_plot_2(loaded_model, loss_deviation, current_epoch_nr, save=True)
+        print_plot_2(loaded_model, loss_deviation, Pm.current_epoch_nr, save=True)
 
 
 if __name__ == "__main__":
