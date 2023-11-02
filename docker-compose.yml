@@ -22,11 +22,10 @@ services:
     environment:
       - JUPYTER_TOKEN=pfppassword
 
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              capabilities: [gpu]
-
-    command: /opt/pfp/scripts/startup.sh
+    # uncomment to use GPU
+    #deploy:
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - driver: nvidia
+    #          capabilities: [gpu]
