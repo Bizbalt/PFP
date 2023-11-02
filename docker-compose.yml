@@ -1,0 +1,32 @@
+version: "3"
+services:
+  pfp-container:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "4"
+    ports:
+      - "8888:8888" # jupyter
+    volumes:
+      - ./pfp_docker/logs/system:/var/log/
+      - ./scripts:/opt/pfp/scripts/
+      - ./pfp_docker/local:/opt/pfp/pfp/
+      - type: bind
+        source: ./polyfingerprints
+        target: /tmp/packages/polyfingerprints
+        read_only: true
+    environment:
+      - JUPYTER_TOKEN=pfppassword
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+
+    command: /opt/pfp/scripts/startup.sh
