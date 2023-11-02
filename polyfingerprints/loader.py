@@ -41,8 +41,8 @@ def data_encoder_picker(
     raise ValueError(f"Data type {strtype} not supported.")
 
 
-def csv_loader(
-    csv: str,
+def df_loader(
+    df: pd.DataFrame,
     repeating_unit_columns: List[Tuple[str, str]],
     mw_column: str,
     start_group_column: Optional[str] = None,
@@ -52,24 +52,17 @@ def csv_loader(
     enhanced_sum_fp_size: int | None = 2048,
     enhanced_fp_functions: List[FingerprintFunction] | None = None,
     additional_columns: Optional[List[str]] = None,
-    **kwargs,
 ):
-    """Loads the data to create a Polyfingerprint from a csv file.
+    """Loads the data to create a Polyfingerprint from a pandas dataframe.
 
     Args:
-        csv (str): Path to the csv file.
-            repeating_unit_columns (List(Tuple[str,str])): List of tuples
+        df (str): Path to the csv file.
+        repeating_unit_columns (List(Tuple[str,str])): List of tuples
             containing the column names of the SMILES representation for
             each repeating unit and the corresponding relativ amount.
         mw_column (str): Name of the column containing the molecular weight.
         y (Optional[str]): Name of the column containing the target values.
-
-        kwargs: Keyword arguments passed to pandas.read_csv to load
-            the csv file, for more information see:
-            https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
-
     """
-    df = pd.read_csv(csv, **kwargs)
     if additional_columns is None:
         additional_columns = []
 
@@ -195,6 +188,49 @@ def csv_loader(
             enhanced_fp_functions=enhanced_fp_functions,
         )
     return alldata
+
+
+def csv_loader(
+    csv: str,
+    repeating_unit_columns: List[Tuple[str, str]],
+    mw_column: str,
+    start_group_column: Optional[str] = None,
+    end_group_column: Optional[str] = None,
+    y: Optional[Union[str, List[str]]] = None,
+    intersection_fp_size: int | None = 2048,
+    enhanced_sum_fp_size: int | None = 2048,
+    enhanced_fp_functions: List[FingerprintFunction] | None = None,
+    additional_columns: Optional[List[str]] = None,
+    **kwargs,
+):
+    """Loads the data to create a Polyfingerprint from a csv file.
+
+    Args:
+        csv (str): Path to the csv file.
+        repeating_unit_columns (List(Tuple[str,str])): List of tuples
+            containing the column names of the SMILES representation for
+            each repeating unit and the corresponding relativ amount.
+        mw_column (str): Name of the column containing the molecular weight.
+        y (Optional[str]): Name of the column containing the target values.
+
+        kwargs: Keyword arguments passed to pandas.read_csv to load
+            the csv file, for more information see:
+            https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
+
+    """
+    df = pd.read_csv(csv, **kwargs)
+    return df_loader(
+        df=df,
+        repeating_unit_columns=repeating_unit_columns,
+        mw_column=mw_column,
+        start_group_column=start_group_column,
+        end_group_column=end_group_column,
+        y=y,
+        intersection_fp_size=intersection_fp_size,
+        enhanced_sum_fp_size=enhanced_sum_fp_size,
+        enhanced_fp_functions=enhanced_fp_functions,
+        additional_columns=additional_columns,
+    )
 
 
 def to_input_output_data(fpdata: List[PfpData]) -> Tuple[np.ndarray, np.ndarray]:
