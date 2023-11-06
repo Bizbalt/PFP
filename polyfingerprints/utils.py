@@ -1,4 +1,4 @@
-from typing import Tuple, List, Optional, Dict, Union
+from typing import Tuple, List, Optional, Dict, Union, Iterable
 from rdkit import Chem
 from rdkit.Chem import Descriptors, Mol, MolFromSmiles
 import numpy as np
@@ -211,3 +211,39 @@ def test_endgroup(smiles: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def test_categorical(data: Iterable):
+    """Test if the data is categorical or numerical
+
+    Args:
+        data (Iterable): data to test
+
+    Raises:
+        ValueError: if the data is neither categorical nor numerical
+        ValueError: if the data is empty
+        ValueError: if the data is not 1-dimensional
+
+    Returns:
+        bool: True if the data is categorical, False if the data is numerical
+
+    """
+
+    # make ndarray from data
+    data = np.asarray(data)
+
+    if data.ndim > 1:
+        raise ValueError("Data must be 1-dimensional")
+    if data.size == 0:
+        raise ValueError("Data must not be empty")
+
+    # check if data is categorical
+
+    if data.dtype.kind in "SUO":
+        return True
+
+    # check if data is numerical
+    if data.dtype.kind in "biufc":
+        return False
+
+    raise ValueError("Data type not supported")

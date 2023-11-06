@@ -1,6 +1,7 @@
 import unittest
 from rdkit import Chem
 from rdkit.Chem import Descriptors
+import numpy as np
 
 
 class TestmolarWtfromSmiles(unittest.TestCase):
@@ -173,6 +174,45 @@ class TestTestPolymerSmiles(unittest.TestCase):
         # Test cases that can potentially raise exceptions
         self.assertFalse(test_endgroup("[CH2]CC("))  # unbalanced parentheses
         self.assertFalse(test_endgroup("invalidSmiles"))  # not a valid SMILES string
+
+
+class TestCategoricalFunction(unittest.TestCase):
+    def test_with_categorical_data(self):
+        from polyfingerprints.utils import test_categorical
+
+        self.assertTrue(test_categorical(["apple", "banana", "cherry"]))
+        self.assertTrue(
+            test_categorical(np.array(["apple", "banana", "cherry"], dtype=object))
+        )
+        self.assertTrue(test_categorical(np.array(["1", "2", "3"], dtype=str)))
+
+    def test_with_numerical_data(self):
+        from polyfingerprints.utils import test_categorical
+
+        self.assertFalse(test_categorical([1, 2, 3]))
+        self.assertFalse(test_categorical(np.array([1.5, 2.5, 3.5])))
+        self.assertFalse(test_categorical(np.array([1, 2, 3], dtype=np.int64)))
+        self.assertFalse(test_categorical(np.array([1, 2, 3], dtype=np.uint8)))
+        self.assertFalse(test_categorical(np.array([True, False, True], dtype=bool)))
+
+    def test_with_empty_data(self):
+        from polyfingerprints.utils import test_categorical
+
+        with self.assertRaises(ValueError):
+            test_categorical([])
+
+    def test_with_higher_dimensional_data(self):
+        from polyfingerprints.utils import test_categorical
+
+        with self.assertRaises(ValueError):
+            test_categorical([[1, 2, 3], [4, 5, 6]])
+
+    def test_with_pandas_series(self):
+        from polyfingerprints.utils import test_categorical
+        import pandas as pd
+
+        self.assertTrue(test_categorical(pd.Series(["apple", "banana", "cherry"])))
+        self.assertFalse(test_categorical(pd.Series([1, 2, 3])))
 
 
 if __name__ == "__main__":

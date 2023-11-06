@@ -76,6 +76,10 @@ def df_loader(
         if isinstance(y, str):
             y = [y]
         colstofind.extend(y)
+    for _y in y:
+        if _y in additional_columns:
+            additional_columns.remove(_y)
+
     if start_group_column:
         colstofind.append(start_group_column)
     if end_group_column:
@@ -239,5 +243,4 @@ def to_input_output_data(fpdata: List[PfpData]) -> Tuple[np.ndarray, np.ndarray]
     )
     output_data = np.array([d["y"] for d in fpdata])
 
-    print(output_data)
     return input_data, output_data
