@@ -57,7 +57,7 @@ RUN conda create --name pfp python=3.12 -y
 
 RUN mamba env update -n pfp -f env_gpu.yaml
 
-COPY /examples/ /opt/pfp/pfp/examples/
+COPY /examples/ /opt/pfp/examples/
 
 
 
