@@ -16,6 +16,9 @@ mamba env list
 mkdir -p pfp
 cd pfp
 
+# copy example dir
+cp -rn ../examples/ ./examples
+
 # print the current working directory
 pwd
 ls -al
