@@ -1,3 +1,3 @@
-from .fcnn import FCCModel
+from .fcnn import FCNNModel
 
-__all__ = ["FCCModel"]
+__all__ = ["FCNNModel"]

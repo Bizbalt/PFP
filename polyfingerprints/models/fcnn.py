@@ -4,7 +4,7 @@ import numpy as np
 from torch.nn import MSELoss
 
 
-class FCCModel(LightningModule):
+class FCNNModel(LightningModule):
     def __init__(
         self,
         input_dim: int,

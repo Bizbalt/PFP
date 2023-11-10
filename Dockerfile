@@ -57,7 +57,8 @@ RUN conda create --name pfp python=3.12 -y
 
 RUN mamba env update -n pfp -f env_gpu.yaml
 
-COPY /examples/ /opt/pfp/examples/
+# copy the examples folder to the /opt/pfp directory
+COPY /examples /opt/pfp/examples
 
 
 
