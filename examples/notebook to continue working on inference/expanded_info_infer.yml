@@ -1,0 +1,75 @@
+additive_columns:
+- '1'
+- '2'
+additives:
+- NCC(=O)O
+- '[N-]=[N+]=[N-]'
+- '[Na+]'
+- '[Li+]'
+- '[K+]'
+- '[Cs+]'
+- '[Cl-]'
+- '[Rb+]'
+categorical_columns: []
+categorical_unique_values: {}
+invalid_additive_amount_indices: []
+invalid_additive_smiles_indices: []
+invalid_end_groups_indices: []
+invalid_repeating_unit_indices: []
+invalid_start_groups_indices: []
+missing_additive_amount: []
+missing_mn_indices:
+- 24
+- 25
+- 26
+- 27
+- 28
+- 29
+- 30
+- 31
+- 32
+- 33
+- 34
+- 35
+- 36
+- 37
+- 38
+- 39
+- 40
+- 41
+- 42
+- 43
+- 44
+- 45
+- 46
+- 47
+- 48
+- 49
+- 50
+- 51
+missing_numerical_indices: {}
+molpercent_repeating_unit_columns:
+- molpercent_repeating_unitA
+- molpercent_repeating_unitB
+- molpercent_repeating_unitC
+- molpercent_repeating_unitD
+- molpercent_repeating_unitE
+numerical_columns:
+- polymer_concentration_wpercent
+- cloud_point
+- def_type
+- pH
+- additive_0
+- additive_1
+- additive_2
+- additive_3
+- additive_4
+- additive_5
+- additive_6
+- additive_7
+repeating_unit_columns:
+- SMILES_repeating_unitA
+- SMILES_repeating_unitB
+- SMILES_repeating_unitC
+- SMILES_repeating_unitD
+- SMILES_repeating_unitE
