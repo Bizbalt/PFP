@@ -17,6 +17,5 @@ scipy==1.5.2
 pickleshare==0.7.5
 ipywidgets==7.5.1
 tk==8.6.10
-future~=0.18.2
 
 IPython~=7.18.1
