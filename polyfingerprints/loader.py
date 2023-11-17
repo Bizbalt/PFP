@@ -43,7 +43,7 @@ def data_encoder_picker(
 
 def df_loader(
     df: pd.DataFrame,
-    repeating_unit_columns: List[Tuple[str, str]],
+    repeating_unit_columns: Tuple[Tuple[any, any]],
     mw_column: str,
     start_group_column: Optional[str] = None,
     end_group_column: Optional[str] = None,
@@ -57,9 +57,9 @@ def df_loader(
 
     Args:
         df (str): Path to the csv file.
-        repeating_unit_columns (List(Tuple[str,str])): List of tuples
+        repeating_unit_columns (Tuple(Tuple[str,str])): Tuple of tuples
             containing the column names of the SMILES representation for
-            each repeating unit and the corresponding relativ amount.
+            each repeating unit and the corresponding relative amount.
         mw_column (str): Name of the column containing the molecular weight.
         y (Optional[str]): Name of the column containing the target values.
     """
