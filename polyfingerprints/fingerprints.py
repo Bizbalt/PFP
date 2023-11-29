@@ -120,9 +120,6 @@ def weight_sum_fingerprints(
     if len(set([len(fp) for fp in fingerprints])) > 1:
         raise ValueError("All fingerprints must have the same length.")
 
-    # make sure all fingerprints are float fingerprints
-    fingerprints = [fp.astype(float) for fp in fingerprints]
-
     # make sure all weights have the same length as the number of fingerprints
     if len(weights) != len(fingerprints):
         raise ValueError(
@@ -194,7 +191,7 @@ def reduce_fp_set(
     return reduced_fps, mask, fingerprints[0].copy()
 
 
-def reduce_another_fp_set(
+def apply_reduction_fp_set(
     fingerprints: List[np.ndarray[[-1], float]],
     mask: np.ndarray[[-1], bool],
     reference_fp: np.ndarray[[-1], float],
@@ -222,7 +219,7 @@ def reduce_another_fp_set(
         >>> fp5 = np.array([0.2, 0.7, 0.1])
         >>> mask = np.array([True, False, True])
         >>> reference_fp = np.array([0.2, 0.5, 0.1])
-        >>> reduced_fps= reduce_another_fp_set([fp4, fp5], mask, reference_fp)
+        >>> reduced_fps= apply_reduction_fp_set([fp4, fp5], mask, reference_fp)
         >>> print(reduced_fps)  # Lists of reduced fingerprints
         np.array([[[0.6], [0.7]])
     """

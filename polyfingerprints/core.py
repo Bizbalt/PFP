@@ -35,7 +35,7 @@ def create_pfp(
             used to create the enhanced sum fingerprint. Defaults to 2048.
         enhanced_fp_functions (Optional[Callable[[List[str], int], List[np.ndarray]]], optional):
             List of functions used to create the enhanced fingerprints.
-            Defaults to [create_RDKFingerprint].
+            Defaults to [create_RDKFingerprint, create_AtomicPairFingerprint].
 
     Returns:
         np.ndarray[[-1], float]:
