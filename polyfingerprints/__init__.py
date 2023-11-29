@@ -2,7 +2,7 @@ from . import loader
 from ._types import PfpData
 from .core import create_pfp, reduce_pfp_in_dataset
 from .logger import PFPLOGGER
-from .fingerprints import reduce_fp_set, reduce_another_fp_set
+from .fingerprints import reduce_fp_set, apply_reduction_fp_set
 from .utils import test_polymer_smiles, test_endgroup, test_startgroup
 from . import datareader
 
@@ -13,7 +13,7 @@ __all__ = [
     "PFPLOGGER",
     "reduce_pfp_in_dataset",
     "reduce_fp_set",
-    "reduce_another_fp_set",
+    "apply_reduction_fp_set",
     "test_polymer_smiles",
     "test_endgroup",
     "test_startgroup",
