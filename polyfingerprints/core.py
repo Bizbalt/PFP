@@ -5,6 +5,7 @@ from .fingerprints import (
     merge_bit_fingerprints,
     weight_sum_fingerprints,
     reduce_fp_set,
+    apply_reduction_fp_set,
     create_AtomicPairFingerprint,
 )
 from ._types import FingerprintFunction, PfpData
@@ -112,3 +113,20 @@ def reduce_pfp_in_dataset(pfp_data: List[PfpData]) -> Tuple[List[PfpData], dict]
         "mask": mask,
         "reference_fp": reference_fp,
     }
+
+
+def apply_reduction_to_pfp_in_dataset(
+    pfp_data: List[PfpData],
+    mask: np.ndarray[[-1], bool],
+    reference_fp: np.ndarray[[-1], float]
+) -> List[PfpData]:
+    for d in pfp_data:
+        if "pfp" not in d or d["pfp"] is None:
+            raise ValueError("Missing Polyfingerprint in dataset.")
+
+    fingerprints: List[np.ndarray] = [d["pfp"] for d in pfp_data]
+    reduced_fps = apply_reduction_fp_set(fingerprints, mask, reference_fp)
+    for d, rfp in zip(pfp_data, reduced_fps):
+        d["pfp"] = rfp
+
+    return pfp_data
