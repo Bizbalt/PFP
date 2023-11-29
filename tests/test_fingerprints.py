@@ -82,14 +82,14 @@ class TestReduceAnotherFPSet(unittest.TestCase):
     # catch the logging output
     @patch("polyfingerprints.PFPLOGGER.info")  # Mock the "info" method of the logger
     def test_reduce_another_fp_set(self, mock_logger):
-        from polyfingerprints.fingerprints import reduce_another_fp_set
+        from polyfingerprints.fingerprints import apply_reduction_fp_set
 
         # Sample fingerprints, mask, and reference_fp for testing
         fp4 = np.array([0.2, 0.6, 0.2])
         fp5 = np.array([0.2, 0.7, 0.1])
         mask = np.array([True, False, True])
         reference_fp = np.array([0.2, 0.5, 0.1])
-        reduced_fps = reduce_another_fp_set(fingerprints=[fp4, fp5], mask=mask, reference_fp=reference_fp)
+        reduced_fps = apply_reduction_fp_set(fingerprints=[fp4, fp5], mask=mask, reference_fp=reference_fp)
 
         # Check that the reduced fingerprints have the expected values
         np.testing.assert_array_equal(reduced_fps, [np.array([0.6]), np.array([0.7])])
