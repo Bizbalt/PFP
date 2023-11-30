@@ -49,11 +49,6 @@ package.nls.*.json
 l10n/
 pfp_docker
 .ipynb_checkpoints
-/.idea/.gitignore
 /examples/cloud_point/expanded_data.csv
 /examples/cloud_point/expanded_info.yml
-/.idea/misc.xml
-/.idea/modules.xml
-/.idea/PFP.iml
-/.idea/inspectionProfiles/profiles_settings.xml
-/.idea/vcs.xml
+/.idea/*
