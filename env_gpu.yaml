@@ -22,3 +22,4 @@ dependencies:
       - ipywidgets
       - WrapConfig
       - plotly
+      - seaborn
