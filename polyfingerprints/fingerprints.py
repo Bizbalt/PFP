@@ -223,14 +223,20 @@ def apply_reduction_fp_set(
         >>> print(reduced_fps)  # Lists of reduced fingerprints
         np.array([[[0.6], [0.7]])
     """
-    reduced_fp = [new_fp[~mask] for new_fp in fingerprints]
-    bit_loss = len(
-        [new_fp2[~(mask & (new_fp2 == reference_fp))] for new_fp2 in fingerprints][0]
+    is_out_count = mask.sum()
+    if is_out_count == 0:
+        return fingerprints
+
+    stacked_fps = np.stack(fingerprints)
+    should_out = (stacked_fps == reference_fp) & mask
+    should_out_count = should_out.sum(1)
+    min_should_out = should_out_count.min()
+    mean_should_out = should_out_count.mean()
+    
+    PFPLOGGER.info(
+        "mean reduction loss is %.0f%% with the highest loss per fingerprint beeing %.0f%%",
+        (1 - mean_should_out / is_out_count) * 100,
+        (1 - min_should_out / is_out_count) * 100,
     )
 
-    PFPLOGGER.info(
-        "loss for the first fingerprint is {0:.0f}%".format(
-            (1 - (len(reduced_fp[0]) / bit_loss)) * 100
-        )
-    )
-    return reduced_fp
+    return [new_fp[~mask] for new_fp in fingerprints]
