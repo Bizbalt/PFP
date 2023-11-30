@@ -76,6 +76,8 @@ def df_loader(
         if isinstance(y, str):
             y = [y]
         colstofind.extend(y)
+    else:
+        y = []
     for _y in y:
         if _y in additional_columns:
             additional_columns.remove(_y)
