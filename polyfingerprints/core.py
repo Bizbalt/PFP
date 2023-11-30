@@ -118,7 +118,7 @@ def reduce_pfp_in_dataset(pfp_data: List[PfpData]) -> Tuple[List[PfpData], dict]
 def apply_reduction_to_pfp_in_dataset(
     pfp_data: List[PfpData],
     mask: np.ndarray[[-1], bool],
-    reference_fp: np.ndarray[[-1], float]
+    reference_fp: np.ndarray[[-1], float],
 ) -> List[PfpData]:
     for d in pfp_data:
         if "pfp" not in d or d["pfp"] is None:
