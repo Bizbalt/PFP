@@ -232,13 +232,9 @@ def apply_reduction_fp_set(
     should_out_count = should_out.sum(1)
     min_should_out = should_out_count.min()
     mean_should_out = should_out_count.mean()
-    print(
-        (1 - mean_should_out / is_out_count) * 100,
-        (1 - min_should_out / is_out_count) * 100,
-    )
-
+    
     PFPLOGGER.info(
-        "mean reduction loss is {0:.0f}% with the highest loss per fingerprint beeing {1:.0f}%",
+        "mean reduction loss is %.0f%% with the highest loss per fingerprint beeing %.0f%%",
         (1 - mean_should_out / is_out_count) * 100,
         (1 - min_should_out / is_out_count) * 100,
     )

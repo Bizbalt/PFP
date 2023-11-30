@@ -99,7 +99,7 @@ class TestReduceAnotherFPSet(unittest.TestCase):
 
         # Check the logging output
         mock_logger.assert_called_once_with(
-            "mean reduction loss is {0:.0f}% with the highest loss per fingerprint beeing {1:.0f}%",
+            "mean reduction loss is %.0f%% with the highest loss per fingerprint beeing %.0f%%",
             25.0,
             50.0,
         )
