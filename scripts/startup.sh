@@ -8,7 +8,7 @@ exec 2> >(tee /var/log/container.log >&2)
 
 # Activate the Conda environment
 echo "ENTER PFP"
-RUN mamba env update -n pfp -f env_gpu.yaml
+mamba env update -n pfp -f env_gpu.yaml
 source activate pfp
 mamba env list
 
