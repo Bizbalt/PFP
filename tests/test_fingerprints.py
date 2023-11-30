@@ -65,7 +65,8 @@ class TestReduceFPSet(unittest.TestCase):
 
         # Check that the reduced fingerprints have the expected values
         np.testing.assert_array_equal(
-            reduced_fps, [np.array([0.5, 0.1]), np.array([0.6, 0.1]), np.array([0.7, 0.2])]
+            reduced_fps,
+            [np.array([0.5, 0.1]), np.array([0.6, 0.1]), np.array([0.7, 0.2])],
         )
 
         # Check that the mask is correct
@@ -89,13 +90,19 @@ class TestReduceAnotherFPSet(unittest.TestCase):
         fp5 = np.array([0.2, 0.7, 0.1])
         mask = np.array([True, False, True])
         reference_fp = np.array([0.2, 0.5, 0.1])
-        reduced_fps = apply_reduction_fp_set(fingerprints=[fp4, fp5], mask=mask, reference_fp=reference_fp)
+        reduced_fps = apply_reduction_fp_set(
+            fingerprints=[fp4, fp5], mask=mask, reference_fp=reference_fp
+        )
 
         # Check that the reduced fingerprints have the expected values
         np.testing.assert_array_equal(reduced_fps, [np.array([0.6]), np.array([0.7])])
 
         # Check the logging output
-        mock_logger.assert_called_once_with("loss for the first fingerprint is 50%")
+        mock_logger.assert_called_once_with(
+            "mean reduction loss is {0:.0f}% with the highest loss per fingerprint beeing {1:.0f}%",
+            25.0,
+            50.0,
+        )
 
 
 if __name__ == "__main__":
