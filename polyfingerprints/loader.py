@@ -43,7 +43,7 @@ def data_encoder_picker(
 
 def df_loader(
     df: pd.DataFrame,
-    repeating_unit_columns: Tuple[Tuple[any, any]],
+    repeating_unit_columns: List[Tuple[str, str]],
     mw_column: str,
     start_group_column: Optional[str] = None,
     end_group_column: Optional[str] = None,
