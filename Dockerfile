@@ -53,7 +53,7 @@ COPY /docker/conf/logrotate.conf /etc/logrotate.conf
 COPY env_gpu.yaml env_gpu.yaml
 
 # Create a new Conda environment called "pfp"
-RUN conda create --name pfp python=3.12 -y
+RUN mamba create --name pfp python=3.12 -y
 
 RUN mamba env update -n pfp -f env_gpu.yaml
 
