@@ -1,4 +1,3 @@
-version: "3"
 services:
   pfp-container:
     build:
@@ -16,7 +15,7 @@ services:
       - ./scripts:/opt/pfp/scripts/ # remove after development
       - ./pfp_docker/local:/opt/pfp/pfp/
       - ./examples:/opt/pfp/examples/ # remove after development
-      - ./env_gpu.yaml:/opt/pfp/env_gpu.yaml # remove after development
+      - ./gpu.yaml:/opt/pfp/env.yaml # remove after development
       - type: bind
         source: ./polyfingerprints
         target: /tmp/packages/polyfingerprints

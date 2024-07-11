@@ -36,7 +36,7 @@ class TestCalcPolymerShares(unittest.TestCase):
         self.ends = ["F", "Cl"]
         self.total_weight = 100
 
-    def test_happy_path(self):
+    def test_polymer_shares_give_100perc(self):
         from polyfingerprints.utils import calc_polymer_shares
 
         ru_mole_fractions, ends_mole_fraction = calc_polymer_shares(

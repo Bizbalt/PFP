@@ -42,7 +42,7 @@ COPY scripts /opt/pfp/scripts
 RUN chmod -R 755 /opt/pfp/scripts
 
 RUN apt-get update && apt-get update -y
-RUN mamba update -n base -c defaults conda
+RUN mamba update -n base --all
 
 # Install logrotate
 RUN apt-get install -y logrotate
@@ -50,12 +50,10 @@ RUN apt-get install -y logrotate
 # Copy the logrotate configuration file
 COPY /docker/conf/logrotate.conf /etc/logrotate.conf
 
-COPY env_gpu.yaml env_gpu.yaml
+COPY env.yaml env.yaml
 
 # Create a new Conda environment called "pfp"
-RUN mamba create --name pfp python=3.12 -y
-
-RUN mamba env update -n pfp -f env_gpu.yaml
+RUN mamba env create -n pfp -f env.yaml
 
 # copy the examples folder to the /opt/pfp directory
 COPY /examples /opt/pfp/examples

@@ -8,7 +8,6 @@ exec 2> >(tee /var/log/container.log >&2)
 
 # Activate the Conda environment
 echo "ENTER PFP"
-#mamba env update -n pfp -f env_gpu.yaml
 source activate pfp
 
 # create a "pfp" directory

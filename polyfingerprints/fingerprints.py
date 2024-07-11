@@ -1,7 +1,7 @@
 from typing import List, Tuple
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem.AtomPairs import Pairs
+from rdkit.Chem import rdFingerprintGenerator
 from .utils import polymol_fom_smiles
 from .logger import PFPLOGGER
 
@@ -29,8 +29,8 @@ def create_AtomicPairFingerprint(
     fingerprint_s = [
         np.array(
             list(
-                Pairs.GetHashedAtomPairFingerprint(
-                    polymol_fom_smiles(smiles), nBits=fp_size
+                Chem.rdFingerprintGenerator.GetAtomPairGenerator(fpSize=fp_size).GetFingerprint(
+                    polymol_fom_smiles(smiles)
                 )
             )
         )
