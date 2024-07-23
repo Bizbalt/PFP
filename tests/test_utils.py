@@ -4,29 +4,33 @@ from rdkit.Chem import Descriptors
 import numpy as np
 
 
+def molar_wt_from_smiles(smiles_1):
+    pass
+
+
 class TestmolarWtfromSmiles(unittest.TestCase):
-    def test_molar_wt_fromSmiles_1(self):
-        from polyfingerprints.utils import molar_wt_fromSmiles
+    def test_molar_wt_from_smiles_1(self):
+        from polyfingerprints.utils import molar_wt_from_smiles
 
         smiles_1 = "C"  # Methane
         smiles_2 = "CC"  # Water
         mol = Chem.MolFromSmiles(smiles_1)
         expected_mol_weight = Descriptors.MolWt(mol)
-        calculated_mol_weight = molar_wt_fromSmiles(smiles_1)
+        calculated_mol_weight = molar_wt_from_smiles(smiles_1)
         self.assertAlmostEqual(expected_mol_weight, calculated_mol_weight, places=5)
 
         mol = Chem.MolFromSmiles(smiles_2)
         expected_mol_weight = Descriptors.MolWt(mol)
-        calculated_mol_weight = molar_wt_fromSmiles(smiles_2)
+        calculated_mol_weight = molar_wt_from_smiles(smiles_2)
         self.assertAlmostEqual(expected_mol_weight, calculated_mol_weight, places=5)
 
     def test_molar_wt_fromSmiles_invalid_smiles(self):
-        from polyfingerprints.utils import molar_wt_fromSmiles
+        from polyfingerprints.utils import molar_wt_from_smiles
 
         # This is to test if the function behaves well with an invalid smiles string
         invalid_smiles = "invalid_smiles"
         with self.assertRaises(Exception):
-            molar_wt_fromSmiles(invalid_smiles)
+            molar_wt_from_smiles(invalid_smiles)
 
 
 class TestCalcPolymerShares(unittest.TestCase):

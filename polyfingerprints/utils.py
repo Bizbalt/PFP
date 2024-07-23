@@ -5,7 +5,7 @@ import numpy as np
 from rdkit import RDLogger
 
 
-def molar_wt_fromSmiles(smiles: str) -> float:
+def molar_wt_from_smiles(smiles: str) -> float:
     return Descriptors.MolWt(polymol_fom_smiles(smiles))
 
 
@@ -27,7 +27,7 @@ def calc_polymer_shares(
     """
 
     total_weight_minus = total_weight - sum(
-        molar_wt_fromSmiles(x) for x in start_end_smiles
+        molar_wt_from_smiles(x) for x in start_end_smiles
     )
     if total_weight_minus < 0:
         raise ValueError(
@@ -42,7 +42,7 @@ def calc_polymer_shares(
     abs_amounts_ru = {k: 1.0 for k in rep_units.keys()}
     for rep_w, chie in rep_units.items():
         rep_m = total_weight_minus * chie
-        rep_n = rep_m / molar_wt_fromSmiles(rep_w)
+        rep_n = rep_m / molar_wt_from_smiles(rep_w)
         abs_amounts_ru[rep_w] = rep_n
 
     total_amounts = sum(abs_amounts_ru.values()) + sum(abs_amounts_start_end)

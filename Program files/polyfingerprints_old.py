@@ -82,7 +82,7 @@ def significance_sigma(fp_rep_arrays, incidence_s):
     return [sigma]
 
 
-def molar_wt_fromSmiles(smiles):
+def molar_wt_from_smiles(smiles):
     try:
         wt = Descriptors.MolWt(Chem.MolFromSmiles(smiles))
     except ValueError:
@@ -94,10 +94,10 @@ def molar_wt_fromSmiles(smiles):
 def calc_ends_share(ends, rep_units, total_weight):
     """calculates the mole fraction of the polymer end groups"""
     total_moles_minus = 0
-    total_weight_minus = total_weight - sum(molar_wt_fromSmiles(x) for x in ends.values())
+    total_weight_minus = total_weight - sum(molar_wt_from_smiles(x) for x in ends.values())
     for rep_w, chie in zip(rep_units.values(), rep_units.keys()):
         rep_m = total_weight_minus * chie
-        rep_n = rep_m / molar_wt_fromSmiles(rep_w)
+        rep_n = rep_m / molar_wt_from_smiles(rep_w)
         total_moles_minus += rep_n
     start_end_chie = 1 / total_moles_minus
     return start_end_chie
